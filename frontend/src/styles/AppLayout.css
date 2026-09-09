@@ -1,0 +1,126 @@
+.app-layout-wrapper {
+  display: flex;
+  flex-direction: column;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+  background: #27284d url("/src/assets/crm-background.png") center center /
+    cover no-repeat;
+}
+
+.app-body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.app-sidebar {
+  width: 200px;
+  min-width: 200px;
+    transition: width .3s ease;
+    position: relative;
+}
+
+.app-sidebar.collapsed {
+    width: 70px;
+    min-width: 70px;
+}
+
+.sidebar-toggle {
+    position: absolute;
+    top: 18px;
+    right: 12px;
+
+    width: 42px;
+    height: 42px;
+
+    border: none;
+    border-radius: 10px;
+
+    background: rgba(255, 255, 255, .15);
+    color: white;
+
+  display: flex;
+    justify-content: center;
+    align-items: center;
+
+    cursor: pointer;
+    z-index: 1000;
+}
+
+.sidebar-toggle:hover {
+    background: rgba(255, 255, 255, .25);
+}
+
+.app-sidebar.collapsed .sidebar-toggle {
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+}
+
+.app-main {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-width: 0;
+}
+
+.app-content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  background: transparent;
+  display: flex;
+  flex-direction: column;
+}
+
+.menu-wrapper {
+  padding-top: 36px;
+  width: 100%;
+    transition: opacity 0.2s ease;
+}
+
+.menu-wrapper.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+.menu-title {
+  font-size: 22px;
+  color: #eaf6ff;
+  margin-left: 16px;
+  margin-bottom: 34px;
+}
+
+.menu {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  width: 100%;
+}
+
+.menu-item {
+  height: 52px;
+  border: none;
+  background: transparent;
+  text-align: left;
+  padding-left: 16px;
+  font-size: 18px;
+  color: #eaf6ff;
+  cursor: pointer;
+  transition: 0.2s;
+  width: 100%;
+  display: block;
+}
+
+.menu-item:hover {
+  background: linear-gradient(to right, #2d20ba, rgba(255, 255, 255, 0));
+}
+
+.menu-item.active {
+  background: linear-gradient(to right, #2d20ba, rgba(255, 255, 255, 0));
+  color: #ffffff;
+  font-weight: bold;
+}

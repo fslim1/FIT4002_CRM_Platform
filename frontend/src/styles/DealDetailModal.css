@@ -1,0 +1,343 @@
+/* ─── DEAL DETAIL MODAL ──────────────────────────────────────────────────── */
+.deal-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 21, 50, 0.5);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+}
+
+.deal-modal-box {
+    position: relative;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(24px) saturate(1.3);
+    -webkit-backdrop-filter: blur(24px) saturate(1.3);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    0 28px 72px rgba(0, 0, 0, 0.3);
+    border-radius: clamp(18px, 2vw, 28px);
+    padding: clamp(24px, 3vw, 36px);
+    width: 780px;
+    max-width: 95vw;
+    max-height: 88vh;
+    overflow-y: auto;
+}
+
+.deal-modal-close {
+    position: absolute;
+    top: 18px;
+    right: 22px;
+    background: transparent;
+    border: none;
+    font-size: 24px;
+    color: #8890a0;
+    cursor: pointer;
+    line-height: 1;
+    transition: color 0.2s;
+}
+
+.deal-modal-close:hover {
+    color: #253984;
+}
+
+.deal-modal-columns {
+    display: flex;
+    gap: clamp(24px, 3vw, 36px);
+    flex-wrap: wrap;
+}
+
+.deal-modal-left {
+    flex: 1;
+    min-width: 280px;
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.deal-modal-right {
+    flex: 1;
+    min-width: 280px;
+    background: rgba(255, 255, 255, 0.55);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+    border-radius: clamp(14px, 2vw, 20px);
+    padding: 20px;
+}
+
+.deal-modal-created {
+    font-family: "Inter", sans-serif;
+    font-size: 12px;
+    color: #878e94;
+    letter-spacing: 0.02em;
+}
+
+.deal-modal-title-row {
+    display: flex;
+    align-items: baseline;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.deal-modal-name {
+    font-family: "Inter", sans-serif;
+    font-weight: 700;
+    font-size: clamp(22px, 2.4vw, 28px);
+    color: #232528;
+    margin: 0;
+    letter-spacing: -0.02em;
+}
+
+.deal-modal-price {
+    font-family: "Inter", sans-serif;
+    font-weight: 600;
+    font-size: 20px;
+    color: #4a4d50;
+}
+
+.deal-modal-company-row {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: #4a4d50;
+    font-family: "Inter", sans-serif;
+    font-size: 14px;
+}
+
+.deal-modal-section {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.deal-modal-label {
+    font-family: "Inter", sans-serif;
+    font-weight: 600;
+    font-size: 12px;
+    color: #7d8290;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0;
+}
+
+.deal-modal-value {
+    font-family: "Inter", sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: #232528;
+}
+
+.deal-modal-stage-badge {
+    display: inline-block;
+    width: fit-content;
+    padding: 8px 18px;
+    border-radius: 20px;
+    font-family: "Inter", sans-serif;
+    font-weight: 700;
+    font-size: 13px;
+    color: #ffffff;
+    box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
+}
+
+.deal-modal-prob-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.deal-modal-prob-slider {
+    flex: 1;
+    height: 6px;
+    border-radius: 6px;
+    appearance: none;
+    -webkit-appearance: none;
+    background: linear-gradient(90deg, #253984 0%, #2a2a72 100%);
+    outline: none;
+    cursor: pointer;
+}
+
+.deal-modal-prob-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 3px solid #253984;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+    cursor: pointer;
+}
+
+.deal-modal-prob-slider::-moz-range-thumb {
+    width: 18px;
+    height: 18px;
+    border-radius: 50%;
+    background: #ffffff;
+    border: 3px solid #253984;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.25);
+    cursor: pointer;
+}
+
+.deal-modal-prob-value {
+    font-family: "Inter", sans-serif;
+    font-weight: 700;
+    font-size: 14px;
+    color: #253984;
+    min-width: 38px;
+    text-align: right;
+}
+
+.deal-modal-grid {
+    display: flex;
+    gap: 28px;
+}
+
+.deal-modal-priority-badge {
+    display: inline-block;
+    padding: 5px 14px;
+    border-radius: 20px;
+    font-family: "Inter", sans-serif;
+    font-weight: 600;
+    font-size: 12px;
+}
+
+.deal-modal-customer-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.deal-modal-view-profile-btn {
+    background: transparent;
+    border: 1px solid #253984;
+    color: #253984;
+    border-radius: 20px;
+    padding: 7px 16px;
+    font-family: "Inter", sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+    white-space: nowrap;
+}
+
+.deal-modal-view-profile-btn:hover:not(:disabled) {
+    background: rgba(37, 57, 132, 0.08);
+}
+
+.deal-modal-view-profile-btn:disabled {
+    opacity: 0.4;
+    cursor: not-allowed;
+}
+
+.deal-modal-section-title {
+    font-family: "Inter", sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    color: #232528;
+    margin: 0 0 14px 0;
+}
+
+.deal-modal-muted {
+    font-family: "Inter", sans-serif;
+    font-size: 13px;
+    color: #8890a0;
+}
+
+.deal-modal-stats-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.deal-modal-stat-card {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 12px 14px;
+    border-radius: 14px;
+    background: rgba(255, 255, 255, 0.75);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+}
+
+.deal-modal-stat-title {
+    font-family: "Inter", sans-serif;
+    font-size: 12px;
+    font-weight: 600;
+    color: #4a4d50;
+}
+
+.deal-modal-stat-count {
+    font-family: "Inter", sans-serif;
+    font-size: 22px;
+    font-weight: 700;
+    color: #253984;
+}
+
+.deal-modal-stat-meta {
+    font-family: "Inter", sans-serif;
+    font-size: 11px;
+    color: #9098a5;
+}
+
+.deal-modal-activity-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 16px;
+}
+
+.deal-modal-activity-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 8px 12px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.65);
+    border-left: 3px solid #253984;
+    font-family: "Inter", sans-serif;
+}
+
+.deal-modal-activity-type {
+    font-size: 12px;
+    font-weight: 600;
+    padding: 2px 10px;
+    border-radius: 12px;
+    background: rgba(37, 57, 132, 0.1);
+    color: #253984;
+}
+
+.deal-modal-activity-time {
+    font-size: 11px;
+    color: #9098a5;
+}
+
+.deal-modal-history-btn {
+    width: 100%;
+    background: transparent;
+    border: 1px solid rgba(37, 57, 132, 0.3);
+    color: #253984;
+    border-radius: 20px;
+    padding: 10px;
+    font-family: "Inter", sans-serif;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.deal-modal-history-btn:hover {
+    background: rgba(37, 57, 132, 0.06);
+}
+
+@media (max-width: 640px) {
+    .deal-modal-columns {
+        flex-direction: column;
+    }
+}

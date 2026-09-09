@@ -1,0 +1,174 @@
+/* My Team page. */
+
+.myteam-page {
+    display: flex;
+    flex-direction: column;
+    gap: clamp(8px, 1.2vw, 14px);
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
+    flex: 1;
+    min-height: 0;
+    padding: clamp(16px, 2vw, 28px) clamp(14px, 2vw, 24px);
+    background: transparent;
+    font-family: "Inter", sans-serif;
+}
+
+/* Glassmorphic main box */
+.myteam-container {
+    flex: 1;
+    overflow: hidden;
+    border-radius: clamp(16px, 2vw, 30px);
+    padding: clamp(16px, 2vw, 28px) clamp(14px, 2vw, 24px);
+    display: flex;
+    flex-direction: column;
+    gap: clamp(12px, 1.6vw, 18px);
+    background: rgba(255, 255, 255, 0.62);
+    backdrop-filter: blur(24px) saturate(1.3);
+    -webkit-backdrop-filter: blur(24px) saturate(1.3);
+    border: 1px solid rgba(255, 255, 255, 0.55);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    0 20px 60px rgba(0, 0, 0, 0.2),
+    0 4px 16px rgba(0, 0, 0, 0.1);
+    min-height: 0;
+}
+
+.myteam-header {
+    flex-shrink: 0;
+}
+
+.myteam-title {
+    font-family: "Inter", sans-serif;
+    font-weight: 700;
+    font-size: clamp(26px, 3.5vw, 45px);
+    color: #232528;
+    margin: 0;
+    letter-spacing: -0.025em;
+}
+
+.myteam-subtitle {
+    color: #555555;
+  font-size: 14px;
+    margin: 4px 0 0 0;
+}
+
+/* Summary cards */
+.myteam-summary {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 14px;
+    flex-shrink: 0;
+}
+
+.myteam-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid rgba(37, 57, 132, 0.12);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    padding: 18px 20px;
+}
+
+.myteam-card-label {
+    font-size: 11px;
+  font-weight: 700;
+    color: #253984;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  display: block;
+  margin-bottom: 10px;
+}
+
+.myteam-card-value {
+    font-size: 20px;
+  font-weight: 700;
+    color: #232528;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+    letter-spacing: -0.01em;
+}
+
+.myteam-card-value svg {
+    color: #253984;
+}
+
+.myteam-card-note {
+    font-size: 12.5px;
+    color: #6e6e6e;
+  margin-top: 8px;
+    line-height: 1.5;
+}
+
+/* Sharing status indicator */
+.myteam-sharing-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+    padding: 7px 16px;
+    border-radius: 14px;
+    font-size: 13px;
+  font-weight: 700;
+    font-family: "Inter", sans-serif;
+}
+
+.myteam-sharing-pill.on {
+    background: rgba(124, 179, 66, 0.18);
+    color: #558b2f;
+}
+
+.myteam-sharing-pill.off {
+    background: rgba(37, 57, 132, 0.08);
+    color: #5a6280;
+}
+
+/* Members card */
+.myteam-members-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid rgba(37, 57, 132, 0.12);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+    padding: clamp(16px, 1.8vw, 22px) clamp(16px, 2vw, 24px);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
+}
+
+.myteam-members-card h2 {
+    font-family: "Inter", sans-serif;
+    font-size: 18px;
+    font-weight: 700;
+    color: #232528;
+    margin: 0;
+    letter-spacing: -0.01em;
+    flex-shrink: 0;
+}
+
+.myteam-empty-card {
+    background: #ffffff;
+    border-radius: 16px;
+    border: 1px solid rgba(37, 57, 132, 0.12);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03);
+  padding: 48px 30px;
+  text-align: center;
+    color: #6e6e6e;
+    font-size: 14px;
+}
+
+.myteam-empty-card h2 {
+    font-family: "Inter", sans-serif;
+    color: #232528;
+    font-size: 18px;
+    font-weight: 700;
+  margin: 12px 0 8px 0;
+}
+
+.myteam-empty-icon {
+  font-size: 40px;
+    color: rgba(37, 57, 132, 0.35);
+    display: block;
+    margin: 0 auto 4px auto;
+}

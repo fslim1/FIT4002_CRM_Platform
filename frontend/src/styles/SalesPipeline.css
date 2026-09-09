@@ -1,0 +1,535 @@
+/* PIPELINE PAGE LAYOUT */
+.pipeline-page {
+  display: flex;
+  flex-direction: row;
+  gap: clamp(8px, 1.2vw, 14px);
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+  overflow: hidden;
+  flex: 1;
+  min-height: 0;
+}
+
+/* ─── WON / LOST PANEL ─────────────────────────────────────────────────────
+   White glass over the background image
+──────────────────────────────────────────────────────────────────────────── */
+.wonlost-panel {
+  width: clamp(140px, 14vw, 200px);
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(18px) saturate(1.4);
+  -webkit-backdrop-filter: blur(18px) saturate(1.4);
+  border: 1px solid rgba(255, 255, 255, 0.28);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 8px 32px rgba(0, 0, 0, 0.25);
+  border-radius: clamp(16px, 2vw, 30px);
+  display: flex;
+  flex-direction: column;
+  padding: clamp(10px, 1.5vw, 16px) clamp(8px, 1vw, 12px);
+  gap: clamp(10px, 1.5vw, 16px);
+  overflow: hidden;
+  min-height: 0;
+}
+
+.wonlost-section {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.wonlost-label-row {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+}
+
+.wonlost-line {
+  display: none;
+}
+
+.wonlost-text {
+  font-family: "Inter", sans-serif;
+  font-weight: 700;
+  font-size: clamp(11px, 1.1vw, 13px);
+  color: #ffffff;
+  white-space: nowrap;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-align: center;
+}
+
+/* Card tray — slightly more opaque white inset */
+.wonlost-box {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: inset 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: clamp(14px, 2vw, 30px);
+  width: 100%;
+}
+
+.wonlost-box .deal-card {
+  width: 80%;
+  margin: 0 auto;
+  flex-shrink: 0;
+}
+
+.wonlost-arrow {
+  text-align: center;
+  font-size: clamp(14px, 1.5vw, 20px);
+  color: rgba(255, 255, 255, 0.45);
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: color 0.2s;
+}
+
+.wonlost-arrow:hover {
+  color: #ffffff;
+}
+
+/* ─── MAIN PIPELINE BOX ─────────────────────────────────────────────────────
+   White glass foreground panel
+──────────────────────────────────────────────────────────────────────────── */
+.pipeline-gradient-box {
+  flex: 1;
+  border-radius: clamp(16px, 2vw, 30px);
+  padding: clamp(16px, 2vw, 28px) clamp(14px, 2vw, 24px);
+  display: flex;
+  flex-direction: column;
+  gap: clamp(12px, 2vw, 20px);
+  background: rgba(255, 255, 255, 0.62);
+  backdrop-filter: blur(24px) saturate(1.3);
+  -webkit-backdrop-filter: blur(24px) saturate(1.3);
+  border: 1px solid rgba(255, 255, 255, 0.55);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.8),
+    0 20px 60px rgba(0, 0, 0, 0.2),
+    0 4px 16px rgba(0, 0, 0, 0.1);
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* SALES PIPELINE TITLE */
+.pipeline-title {
+  font-family: "Inter", sans-serif !important;
+  font-weight: 700 !important;
+  font-size: clamp(26px, 3.5vw, 45px) !important;
+  color: #232528 !important;
+  margin: 0 !important;
+  letter-spacing: -0.025em !important;
+  flex-shrink: 0;
+}
+
+/* STAGE COLUMNS ROW */
+.pipeline-stages {
+  display: flex;
+  flex-direction: row;
+  gap: clamp(6px, 1vw, 12px);
+  flex: 1;
+  min-height: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding-bottom: 4px;
+  align-items: stretch;
+}
+
+/* ─── INDIVIDUAL STAGE COLUMN ────────────────────────────────────────────── */
+.stage-column {
+  flex: 1;
+  min-width: 140px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.7);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.9),
+    0 2px 8px rgba(0, 0, 0, 0.06);
+  border-radius: clamp(14px, 2vw, 30px);
+  display: flex;
+  flex-direction: column;
+  padding: clamp(10px, 1.5vw, 16px) clamp(8px, 1vw, 12px);
+  gap: clamp(8px, 1vw, 12px);
+  min-height: 0;
+  overflow: hidden;
+    transition: background 0.25s,
+    box-shadow 0.25s;
+}
+
+.stage-column:hover {
+  background: rgba(255, 255, 255, 0.65);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 1),
+    0 4px 16px rgba(0, 0, 0, 0.1);
+}
+
+/* STAGE HEADER ROW */
+.stage-header {
+  display: flex;
+  align-items: center;
+  gap: clamp(4px, 0.8vw, 8px);
+  flex-shrink: 0;
+}
+
+/* STAGE DOT */
+.stage-dot {
+  width: clamp(12px, 1.2vw, 18px);
+  height: clamp(12px, 1.2vw, 18px);
+  border-radius: 50%;
+  flex-shrink: 0;
+    box-shadow: 0 0 7px 1px currentColor,
+    0px 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+/* STAGE NAME */
+.stage-name {
+  font-family: "Inter", sans-serif;
+  font-weight: 600;
+  font-size: clamp(12px, 1.3vw, 18px);
+  color: #232528;
+  white-space: nowrap;
+}
+
+/* CARDS AREA INSIDE COLUMN */
+.stage-cards-area {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stage-cards-area .deal-card {
+  flex-shrink: 0;
+  min-height: 90px;
+}
+
+/* ─── ACTION BAR ─────────────────────────────────────────────────────────── */
+.pipeline-action-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 12px;
+  flex-shrink: 0;
+}
+
+.btn-add-lead {
+  background: linear-gradient(135deg, #253984 0%, #2a2a72 100%);
+  color: #eaf6ff;
+  border: none;
+  border-radius: 30px;
+  padding: 10px 22px;
+  font-family: "Inter", sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  height: 42px;
+  letter-spacing: 0.01em;
+  box-shadow: 0 4px 14px rgba(37, 57, 132, 0.45);
+    transition: box-shadow 0.2s,
+    transform 0.15s;
+}
+
+.btn-add-lead:hover {
+  box-shadow: 0 7px 22px rgba(37, 57, 132, 0.6);
+  transform: translateY(-1px);
+}
+
+.btn-add-lead:active {
+  transform: translateY(0);
+}
+
+/* ─── MODAL ──────────────────────────────────────────────────────────────── */
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(20, 21, 50, 0.5);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modal-box {
+  background: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-radius: 20px;
+  padding: 28px;
+  width: 400px;
+  max-width: 90vw;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  border: 1px solid rgba(255, 255, 255, 0.6);
+  box-shadow: 0 28px 72px rgba(0, 0, 0, 0.3);
+}
+
+.modal-title {
+  font-family: "Inter", sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  color: #232528;
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.modal-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.modal-label {
+  font-family: "Inter", sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  color: #232528;
+}
+
+.modal-input {
+  font-family: "Inter", sans-serif;
+  font-size: 13px;
+  padding: 8px 12px;
+  border: 1px solid rgba(37, 57, 132, 0.22);
+  border-radius: 8px;
+  outline: none;
+  color: #232528;
+  background: rgba(255, 255, 255, 0.8);
+    transition: border-color 0.2s,
+    box-shadow 0.2s,
+    background 0.2s;
+}
+
+.modal-input:focus {
+  border-color: #253984;
+  box-shadow: 0 0 0 3px rgba(37, 57, 132, 0.12);
+  background: #ffffff;
+}
+
+.modal-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.btn-cancel {
+  background: transparent;
+  border: 1px solid rgba(37, 57, 132, 0.22);
+  border-radius: 20px;
+  padding: 8px 20px;
+  font-family: "Inter", sans-serif;
+  font-size: 13px;
+  cursor: pointer;
+  color: #232528;
+    transition: background 0.2s,
+    border-color 0.2s;
+}
+
+.btn-cancel:hover {
+  background: rgba(37, 57, 132, 0.06);
+  border-color: rgba(37, 57, 132, 0.38);
+}
+
+.btn-submit {
+  background: linear-gradient(135deg, #253984 0%, #2a2a72 100%);
+  color: #eaf6ff;
+  border: none;
+  border-radius: 20px;
+  padding: 8px 20px;
+  font-family: "Inter", sans-serif;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  box-shadow: 0 3px 12px rgba(37, 57, 132, 0.4);
+    transition: box-shadow 0.2s,
+    transform 0.15s;
+}
+
+.btn-submit:hover {
+  box-shadow: 0 6px 18px rgba(37, 57, 132, 0.55);
+  transform: translateY(-1px);
+}
+
+/* ─── TITLE ROW / DEAL HISTORY ───────────────────────────────────────────── */
+.pipeline-title-row {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 4px;
+  flex-shrink: 0;
+}
+
+.btn-deal-history {
+  font-size: 12px;
+  padding: 5px 14px;
+  border-radius: 20px;
+  border: 1px solid rgba(37, 57, 132, 0.22);
+  background: rgba(37, 57, 132, 0.06);
+  cursor: pointer;
+  color: #253984;
+  font-family: "Inter", sans-serif;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+    transition: background 0.2s,
+    border-color 0.2s;
+}
+
+.btn-deal-history:hover {
+  background: rgba(37, 57, 132, 0.12);
+  border-color: rgba(37, 57, 132, 0.38);
+}
+
+/* ─── HISTORY MODAL ──────────────────────────────────────────────────────── */
+.history-modal {
+  max-height: 70vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.history-log-list {
+  overflow-y: auto;
+  max-height: 50vh;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.history-log-item {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.7);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-left: 3px solid #253984;
+  transition: background 0.15s;
+}
+
+.history-log-item:hover {
+  background: rgba(255, 255, 255, 0.9);
+}
+
+.history-log-date {
+  font-size: 11px;
+  color: #878e94;
+  letter-spacing: 0.02em;
+}
+
+.history-log-deal {
+  font-size: 13px;
+  font-weight: 600;
+  color: #232528;
+}
+
+.history-log-change {
+  font-size: 12px;
+  color: #253984;
+}
+
+/* ─── FILTER & SEARCH BUTTONS ───────────────────────────────────────────── */
+.btn-filter {
+  height: 42px;
+  padding: 0 16px;
+  border-radius: 30px;
+  border: 1px solid #253984;
+  background: transparent;
+  color: #253984;
+  font-family: "Inter", sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  letter-spacing: 0.01em;
+    transition: background 0.2s,
+    border-color 0.2s;
+  appearance: none;
+  -webkit-appearance: none;
+  padding-right: 28px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 12 12'%3E%3Cpath fill='%23253984' d='M6 8L1 3h10z'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+}
+
+.btn-filter:hover {
+  background-color: rgba(37, 57, 132, 0.06);
+}
+
+.btn-search {
+  height: 42px;
+  padding: 0 16px;
+  border-radius: 30px;
+  border: 1px solid #253984;
+  background: transparent;
+  color: #232528;
+  font-family: "Inter", sans-serif;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: text;
+  letter-spacing: 0.01em;
+  outline: none;
+  width: 180px;
+    transition: background 0.2s,
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+
+.btn-search::placeholder {
+  color: #4a4d50;
+  font-weight: 400;
+}
+
+.btn-search:focus {
+  background: rgba(37, 57, 132, 0.04);
+  border-color: #253984;
+  box-shadow: 0 0 0 3px rgba(37, 57, 132, 0.1);
+}
+
+/* ─── STATS ROW ──────────────────────────────────────────────────────────── */
+.pipeline-stats-row {
+  display: flex;
+  flex-direction: row;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.pipeline-stat-box {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 16px;
+  border-radius: 16px;
+  background: transparent;
+  border: none;
+  outline: 2.5px solid #3b4f9a;
+}
+
+.pipeline-stat-box:hover::after {
+  background: rgba(37, 57, 132, 0.05);
+}
+
+.pipeline-stat-label {
+  font-family: "Inter", sans-serif;
+  font-size: 12px;
+  font-weight: 500;
+  color: #e1e0e0;
+  letter-spacing: 0.02em;
+}
+
+.pipeline-stat-value {
+  font-family: "Inter", sans-serif;
+  font-size: clamp(18px, 2vw, 26px);
+  font-weight: 700;
+  color: #232528;
+  letter-spacing: -0.02em;
+}
