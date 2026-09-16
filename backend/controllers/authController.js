@@ -1,5 +1,4 @@
 const User = require('../models/User')
-const {ROLES} = require('../models/User')
 const {signToken} = require('../middleware/auth')
 const {verifyIdToken} = require('../services/googleAuth')
 
@@ -13,7 +12,7 @@ const isValidEmail = (email) =>
 
 exports.signup = async (req, res) => {
     try {
-        const {fullName, email, password, companyName, role, gmailAccessToken} = req.body || {}
+        const {fullName, email, password, companyName, gmailAccessToken} = req.body || {}
 
         if (!fullName || !email || !password || !companyName) {
             return res
@@ -33,9 +32,6 @@ exports.signup = async (req, res) => {
                 .status(400)
                 .json({message: 'Password must be at least 8 characters'})
         }
-        if (role && !ROLES.includes(role)) {
-            return res.status(400).json({message: 'Invalid role'})
-        }
 
         const existing = await User.findOne({email: email.toLowerCase()})
         if (existing) {
@@ -44,12 +40,14 @@ exports.signup = async (req, res) => {
                 .json({message: 'An account with this email already exists'})
         }
 
+        // Role is always 'User' on public signup — admins create other roles via
+        // the admin user management endpoint (POST /api/admin/users).
         const user = await User.create({
             fullName: fullName.trim(),
             email: email.toLowerCase().trim(),
             password,
             companyName: companyName.trim(),
-            role: role || 'User',
+            role: 'User',
             gmailAccessToken: gmailAccessToken || null,
             isGmailLinked: Boolean(gmailAccessToken),
         })
@@ -76,6 +74,14 @@ exports.login = async (req, res) => {
         const user = await User.findOne({email: email.toLowerCase()}).select('+password')
         if (!user) {
             return res.status(401).json({message: 'Invalid email or password'})
+        }
+
+        // Reject deactivated accounts before checking the password so the error
+        // message doesn't reveal whether the account exists.
+        if (user.isActive === false) {
+            return res
+                .status(401)
+                .json({message: 'This account has been deactivated. Please contact your administrator.'})
         }
 
         const ok = await user.comparePassword(password)
@@ -127,6 +133,12 @@ exports.googleLogin = async (req, res) => {
         })
 
         if (user) {
+            // Reject deactivated accounts.
+            if (user.isActive === false) {
+                return res
+                    .status(401)
+                    .json({message: 'This account has been deactivated. Please contact your administrator.'})
+            }
             if (!user.googleId) user.googleId = profile.googleId
             if (gmailAccessToken) {
                 user.gmailAccessToken = gmailAccessToken

@@ -11,6 +11,7 @@ import Customers from "@/pages/Customers";
 import CustomerProfile from "@/pages/CustomerProfile";
 import TaskKanban from './pages/TaskKanban'
 import AdminSettings from '@/pages/AdminSettings'
+import AdminUsers from '@/pages/AdminUsers'
 import MyTeam from '@/pages/MyTeam'
 import PortalLogin from '@/pages/PortalLogin'
 import PortalDashboard from '@/pages/PortalDashboard'
@@ -82,6 +83,16 @@ function App() {
                             <ProtectedRoute roles={['Admin']}>
                                 <AppLayout>
                                     <AdminSettings/>
+                                </AppLayout>
+                            </ProtectedRoute>
+                        }
+                    />
+                    <Route
+                        path="/admin/users"
+                        element={
+                            <ProtectedRoute roles={['Admin']}>
+                                <AppLayout>
+                                    <AdminUsers/>
                                 </AppLayout>
                             </ProtectedRoute>
                         }

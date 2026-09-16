@@ -22,15 +22,6 @@ import {Input} from '@/components/ui/input'
 import {Label} from '@/components/ui/label'
 import {Card, CardContent} from '@/components/ui/card'
 import {Alert, AlertDescription} from '@/components/ui/alert'
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select'
-
-const ROLES = ['Admin', 'Supervisor', 'User']
 
 const GRADIENTS = {
     primary: 'linear-gradient(180deg, #FFFFFF 0%, #DDE6FF 100%)',
@@ -93,16 +84,12 @@ export default function Signup() {
         email: '',
         password: '',
         companyName: '',
-        role: 'User',
     })
     const [error, setError] = useState('')
     const [submitting, setSubmitting] = useState(false)
 
     const onChange = (e) =>
         setForm((prev) => ({...prev, [e.target.name]: e.target.value}))
-
-    const onRoleChange = (value) =>
-        setForm((prev) => ({...prev, role: value}))
 
     const handleSubmit = async (e) => {
         e.preventDefault()
@@ -125,10 +112,6 @@ export default function Signup() {
             setError('Password must be at least 8 characters.')
             return
         }
-        if (!ROLES.includes(form.role)) {
-            setError('Please select a valid role.')
-            return
-        }
 
         setSubmitting(true)
         try {
@@ -139,7 +122,6 @@ export default function Signup() {
                 email: form.email.trim(),
                 password: form.password,
                 companyName: form.companyName.trim(),
-                role: form.role,
                 gmailAccessToken,
             })
             navigate('/', {replace: true})
@@ -218,31 +200,6 @@ export default function Signup() {
                                         autoComplete="organization"
                                         disabled={submitting}
                                     />
-
-                                    <div className="space-y-2">
-                                        <Label htmlFor="role" className="text-slate-700">
-                                            Role
-                                        </Label>
-                                        <Select
-                                            value={form.role}
-                                            onValueChange={onRoleChange}
-                                            disabled={submitting}
-                                        >
-                                            <SelectTrigger
-                                                id="role"
-                                                className="h-12 rounded-xl border-slate-200 bg-slate-100 text-slate-800"
-                                            >
-                                                <SelectValue placeholder="Select a role"/>
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {ROLES.map((r) => (
-                                                    <SelectItem key={r} value={r}>
-                                                        {r}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                    </div>
 
                                     {error && (
                                         <Alert variant="destructive">

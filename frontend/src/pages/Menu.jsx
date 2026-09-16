@@ -44,14 +44,22 @@ function Menu({ currentPage, setCurrentPage }) {
                     My Team ⚑
                 </button>
             )}
-            {/* The system settings menu is visible only to Admin */}
+            {/* User Management & settings menu visible to Admin */}
             {user?.role === 'Admin' && (
-                <button
-                    className={`menu-item ${location.pathname === '/settings' ? 'active' : ''}`}
-                    onClick={() => navigate('/settings')}
-                >
-                    Settings ⚙
-                </button>
+                <>
+                    <button
+                        className={`menu-item ${location.pathname === '/admin/users' ? 'active' : ''}`}
+                        onClick={() => navigate('/admin/users')}
+                    >
+                        User Directory 👥
+                    </button>
+                    <button
+                        className={`menu-item ${location.pathname === '/settings' ? 'active' : ''}`}
+                        onClick={() => navigate('/settings')}
+                    >
+                        Settings ⚙
+                    </button>
+                </>
             )}
         </nav>
     );
