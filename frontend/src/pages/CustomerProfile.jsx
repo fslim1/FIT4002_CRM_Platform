@@ -27,7 +27,10 @@ import {generateWhatsAppUrl} from '../lib/phoneUtils';
 const ProfileLogo = ({companyLogo, companyName}) => {
     const [imgError, setImgError] = useState(false);
 
-    const imageUrl = companyLogo ? `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}${companyLogo}` : null;
+    const backendRoot = (import.meta.env.VITE_API_URL || 'http://localhost:5001/api').replace(/\/api\/?$/, '');
+    const imageUrl = companyLogo
+        ? (companyLogo.startsWith('http') ? companyLogo : `${backendRoot}${companyLogo.startsWith('/') ? '' : '/'}${companyLogo}`)
+        : null;
 
     if (imageUrl && !imgError) {
         return (
@@ -825,7 +828,7 @@ function CustomerProfile() {
 
                                             <div className="file-actions">
                                                 <a
-                                                    href={`${import.meta.env.VITE_API_URL || "http://localhost:5001"}/api/customers/${customer._id}/files/${doc._id}/download`}
+                                                    href={`${(import.meta.env.VITE_API_URL || 'http://localhost:5001/api').replace(/\/$/, '')}/customers/${customer._id}/files/${doc._id}/download`}
                                                     className="download-btn"
                                                 >
                                                     Download

@@ -10,7 +10,10 @@ import '../styles/Customers.css';
 const CompanyAvatar = ({companyLogo, companyName, size = 'normal'}) => {
     const [imgError, setImgError] = useState(false);
 
-    const imageUrl = companyLogo ? `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}${companyLogo}` : null;
+    const backendRoot = (import.meta.env.VITE_API_URL || 'http://localhost:5001/api').replace(/\/api\/?$/, '');
+    const imageUrl = companyLogo
+        ? (companyLogo.startsWith('http') ? companyLogo : `${backendRoot}${companyLogo.startsWith('/') ? '' : '/'}${companyLogo}`)
+        : null;
 
     if (imageUrl && !imgError) {
         return (
