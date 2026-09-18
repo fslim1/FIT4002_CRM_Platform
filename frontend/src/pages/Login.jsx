@@ -2,9 +2,8 @@ import {useCallback, useState} from 'react'
 import {Link, useLocation, useNavigate} from 'react-router-dom'
 import {ArrowRight, Lock, Mail} from 'lucide-react'
 import {useAuth} from '@/context/auth'
-import { requestGmailToken } from '@/context/AuthContext'
+import { requestGmailToken } from '@/api/gmailToken'
 import AppHeader from '@/components/AppHeader'
-import GoogleSignInButton from '@/components/GoogleSignInButton'
 import {Button} from '@/components/ui/button'
 import {Input} from '@/components/ui/input'
 import {Label} from '@/components/ui/label'
@@ -90,9 +89,6 @@ export default function Login() {
         [loginWithGoogle, navigate, redirectTo]
     )
 
-    const handleGoogleError = useCallback((message) => {
-        setError(message || 'Google sign-in is unavailable.')
-    }, [])
 
     return (
         <div
