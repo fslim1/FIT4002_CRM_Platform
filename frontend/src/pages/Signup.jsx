@@ -14,7 +14,7 @@ import {
     Users,
 } from 'lucide-react'
 import {useAuth} from '@/context/auth'
-import { requestGmailToken } from '@/context/AuthContext'
+import { requestGmailToken } from '@/api/gmailToken'
 import AppHeader from '@/components/AppHeader'
 import KanbanMock from '@/components/KanbanMock'
 import {Button} from '@/components/ui/button'

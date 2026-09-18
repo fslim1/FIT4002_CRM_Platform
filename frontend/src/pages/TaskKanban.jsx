@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { Search, Bell, Building2, Calendar, Users } from "lucide-react";
 import NotificationPopup from "./NotificationPopup";
 import { getNotifications } from "../api/notifications";

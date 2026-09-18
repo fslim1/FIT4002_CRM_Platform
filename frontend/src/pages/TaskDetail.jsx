@@ -16,10 +16,9 @@ import {Pencil} from "lucide-react";
 import {Badge} from "@/components/ui/badge";
 
 const TaskDetail = ({task, onClose, onEdit, onDelete}) => {
-    console.log(task);
-    if (!task) return null;
-
     const {user} = useAuth();
+
+    if (!task) return null;
 
     const isCreator = user && task.createdBy && task.createdBy._id === user.id;
     const isSupervisorOrAbove = user?.role === 'Supervisor' || user?.role === 'Admin';

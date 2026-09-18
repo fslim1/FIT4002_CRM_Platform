@@ -1,7 +1,7 @@
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '@/context/auth'
 
-function Menu({ currentPage, setCurrentPage }) {
+function Menu() {
     const navigate = useNavigate()
     const location = useLocation()
     const {user} = useAuth()
