@@ -1,4 +1,4 @@
-import React, {useState, useEffect} from "react";
+import {useState, useEffect} from "react";
 import {X} from "lucide-react";
 import "../styles/TaskBoard.css";
 import {createTask} from "../api/tasks";
@@ -12,7 +12,6 @@ const CreateTaskPopup = ({onClose, refreshTasks}) => {
     const [customer, setCustomer] = useState("");
     const [priority, setPriority] = useState("Medium");
     const [dueDate, setDueDate] = useState("");
-    const [pipeline, setPipeline] = useState("");
     const [users, setUsers] = useState([]);
     const [customers, setCustomers] = useState([]);
     const [selectedUsers, setSelectedUsers] = useState([]);
