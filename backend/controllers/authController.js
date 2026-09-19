@@ -10,7 +10,6 @@ const {
     issueCode,
     confirmCode,
 } = require('../services/emailConfirmation')
-const {companyPattern} = require('../middleware/teamScope')
 
 const companyFromEmail = (email) => {
     const domain = (email.split('@')[1] || '').split('.')[0] || 'My Company'
@@ -21,11 +20,6 @@ const isValidEmail = (email) =>
     typeof email === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 
 const normalizeEmail = (email) => String(email || '').toLowerCase().trim()
-
-// A company has exactly one Admin: whoever signs up first. Everyone after
-// them joins as Supervisor or User and is promoted from Settings -> Users.
-const companyHasAdmin = async (companyName) =>
-    Boolean(await User.findOne({companyName: companyPattern(companyName), role: 'Admin'}))
 
 exports.signup = async (req, res) => {
     try {
@@ -53,7 +47,9 @@ exports.signup = async (req, res) => {
                 .json({message: passwordCheck.message, field: 'password', failed: passwordCheck.failed})
         }
         if (role && !ROLES.includes(role)) {
-            return res.status(400).json({message: 'Invalid role'})
+            return res
+                .status(400)
+                .json({message: `Role must be one of: ${ROLES.join(', ')}`, field: 'role'})
         }
 
         const existing = await User.findOne({email: normalizeEmail(email)})
@@ -69,14 +65,6 @@ exports.signup = async (req, res) => {
         }
 
         const requestedRole = role || 'User'
-        if (requestedRole === 'Admin' && (await companyHasAdmin(companyName))) {
-            return res.status(409).json({
-                message:
-                    'This company already has an administrator. Sign up as a Supervisor or User, then ask your administrator to change your role.',
-                field: 'role',
-                code: 'admin_exists',
-            })
-        }
 
         // A well-formed address is not necessarily a real one: confirm the
         // mailbox exists before an account is created against it.
@@ -303,5 +291,5 @@ exports.googleLogin = async (req, res) => {
     } catch (err) {
         console.error('Google login error:', err)
         return res.status(500).json({message: 'Unable to complete Google login'})
-    }    
+    }
 }

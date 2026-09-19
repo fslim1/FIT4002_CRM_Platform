@@ -36,13 +36,13 @@ Three per-user flags, grantable by an Admin only. Admins hold all three by defau
 
 ## 2. Who assigns what
 
-| What                 | Who may set it                   | How                                                                                                                                                                                                   |
-|----------------------|----------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| Role                 | Admin only                       | `PATCH /api/users/:id/role`. Admin can also be picked at sign-up, but only while the company has no Admin yet. After that the request is refused, so a company always has exactly one starting Admin. |
-| Team                 | Admin only                       | `PATCH /api/users/:id/team`. Moving a user changes their data visibility immediately.                                                                                                                 |
-| Supervisor of a team | Admin only                       | Set on the team; losing the Supervisor role clears the designation.                                                                                                                                   |
-| Permission overrides | Admin only                       | `PATCH /api/users/:id/permissions`                                                                                                                                                                    |
-| **Task assignees**   | **Any authenticated staff user** | Set on the task itself. There is no role restriction.                                                                                                                                                 |
+| What                 | Who may set it                   | How                                                                                                                                                                               |
+|----------------------|----------------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
+| Role                 | Admin only                       | `PATCH /api/users/:id/role`. Any of the three roles, Admin included, can also be chosen at sign-up, and a company may hold several Admins. An Admin cannot change their own role. |
+| Team                 | Admin only                       | `PATCH /api/users/:id/team`. Moving a user changes their data visibility immediately.                                                                                             |
+| Supervisor of a team | Admin only                       | Set on the team; losing the Supervisor role clears the designation.                                                                                                               |
+| Permission overrides | Admin only                       | `PATCH /api/users/:id/permissions`                                                                                                                                                |
+| **Task assignees**   | **Any authenticated staff user** | Set on the task itself. There is no role restriction.                                                                                                                             |
 
 ## 3. Tasks
 

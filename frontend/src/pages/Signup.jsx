@@ -359,8 +359,8 @@ export default function Signup() {
                                             </p>
                                         ) : (
                                             <p id="role-hint" className="text-xs text-slate-500">
-                                                Each company has one Admin. If yours already has one, choose
-                                                another role and ask them to update it later.
+                                                Pick the role you need. An administrator at your company can
+                                                change it later from Settings.
                                             </p>
                                         )}
                                     </div>
