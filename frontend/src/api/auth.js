@@ -6,12 +6,18 @@ export const signup = (payload) =>
 export const login = (payload) =>
     api.post('/auth/login', payload).then((r) => r.data)
 
+export const verifyEmail = (payload) =>
+    api.post('/auth/verify-email', payload).then((r) => r.data)
+
+export const resendVerification = (email) =>
+    api.post('/auth/resend-verification', {email}).then((r) => r.data)
+
 export const fetchMe = () => api.get('/auth/me').then((r) => r.data)
 
 export const fetchAuthConfig = () =>
     api.get('/auth/config').then((r) => r.data)
 
 export const googleLogin = (payload) => {
-    const body = typeof payload === 'string' ? { credential: payload } : payload;
+    const body = typeof payload === 'string' ? {credential: payload} : payload;
     return api.post('/auth/google', body).then((r) => r.data);
 }

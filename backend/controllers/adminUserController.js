@@ -7,6 +7,8 @@ const Deal = require('../models/Deal')
 const DealLog = require('../models/DealLog')
 const Task = require('../models/Task')
 const Notification = require('../models/Notification')
+const {verifyEmailExists} = require('../services/emailVerification')
+const {validatePassword} = require('../services/passwordPolicy')
 
 // Helpers
 const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
@@ -22,16 +24,17 @@ const isSameCompany = (a, b) =>
 const isValidEmail = (email) =>
     typeof email === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 
-// Roles that Admins are permitted to create via user management.
-// Admins cannot create another Admin through this UI endpoint.
-const CREATABLE_ROLES = ['User', 'Supervisor']
+// Roles an Admin may hand out from user management. A company can hold as many
+// Admins as it needs, so every role is available here.
+const CREATABLE_ROLES = [...ROLES]
 
 // GET /api/admin/users
 // List all users in the admin's company with optional search and filters.
-// Query params: search (name/email), role, status ('active'|'inactive')
+// Query params: search (name/email), role, team ('none' or an id),
+// status ('active'|'inactive')
 exports.listUsers = async (req, res) => {
     try {
-        const {search, role, status} = req.query
+        const {search, role, team, status} = req.query
         const filter = {...sameCompanyFilter(req.user)}
 
         if (search && String(search).trim()) {
@@ -44,6 +47,16 @@ exports.listUsers = async (req, res) => {
                 return res.status(400).json({message: 'Invalid role filter'})
             }
             filter.role = role
+        }
+
+        if (team) {
+            if (team === 'none') {
+                filter.team = null
+            } else if (mongoose.Types.ObjectId.isValid(team)) {
+                filter.team = team
+            } else {
+                return res.status(400).json({message: 'Invalid team filter'})
+            }
         }
 
         if (status) {
@@ -64,12 +77,12 @@ exports.listUsers = async (req, res) => {
 }
 
 // POST /api/admin/users
-// Create a new salesperson or supervisor in the admin's company.
+// Create a new member of the admin's company, in any role.
 // Body: { fullName, email, password, confirmPassword, role, teamId? }
 exports.createUser = async (req, res) => {
     try {
         const {fullName, email, password, confirmPassword, role, teamId} =
-            req.body || {}
+        req.body || {}
 
         if (!fullName || !email || !password || !role) {
             return res.status(400).json({
@@ -84,10 +97,11 @@ exports.createUser = async (req, res) => {
         if (!isValidEmail(email)) {
             return res.status(400).json({message: 'Please provide a valid email'})
         }
-        if (typeof password !== 'string' || password.length < 8) {
+        const passwordCheck = validatePassword(password)
+        if (!passwordCheck.ok) {
             return res
                 .status(400)
-                .json({message: 'Password must be at least 8 characters'})
+                .json({message: passwordCheck.message, field: 'password', failed: passwordCheck.failed})
         }
         if (confirmPassword !== undefined && password !== confirmPassword) {
             return res
@@ -96,7 +110,8 @@ exports.createUser = async (req, res) => {
         }
         if (!CREATABLE_ROLES.includes(role)) {
             return res.status(400).json({
-                message: `Role must be one of: ${CREATABLE_ROLES.join(', ')}. Admin accounts must be created via the seed script.`,
+                message: `Role must be one of: ${CREATABLE_ROLES.join(', ')}`,
+                field: 'role',
             })
         }
 
@@ -105,6 +120,13 @@ exports.createUser = async (req, res) => {
             return res
                 .status(409)
                 .json({message: 'An account with this email already exists'})
+        }
+
+        // A well-formed address is not necessarily a real one: confirm the
+        // mailbox exists before an account is created against it.
+        const emailCheck = await verifyEmailExists(email)
+        if (!emailCheck.ok) {
+            return res.status(400).json({message: emailCheck.message, field: 'email'})
         }
 
         let team = null
@@ -117,7 +139,7 @@ exports.createUser = async (req, res) => {
                 !team ||
                 (team.company &&
                     team.company.trim().toLowerCase() !==
-                        (req.user.companyName || '').trim().toLowerCase())
+                    (req.user.companyName || '').trim().toLowerCase())
             ) {
                 return res.status(404).json({message: 'Team not found'})
             }
@@ -134,6 +156,7 @@ exports.createUser = async (req, res) => {
             role,
             team: team ? team._id : null,
             authProvider: 'local',
+            emailVerified: true,
         })
 
         await newUser.populate('team', 'name')
@@ -147,6 +170,51 @@ exports.createUser = async (req, res) => {
         }
         console.error('Admin createUser error:', err)
         return res.status(500).json({message: 'Unable to create user'})
+    }
+}
+
+// PATCH /api/admin/users/:id/status
+// Deactivate or reactivate a member of the admin's company.
+// Body: { isActive: boolean }
+//
+// Deactivating keeps the account and everything it owns, but closes it: the
+// login paths refuse it and requireAuth rejects tokens it already holds, so
+// access stops at the next request rather than at the next sign-in.
+exports.setUserStatus = async (req, res) => {
+    try {
+        const targetId = req.params.id
+        const {isActive} = req.body || {}
+
+        if (!mongoose.Types.ObjectId.isValid(targetId)) {
+            return res.status(400).json({message: 'Invalid user ID'})
+        }
+        if (typeof isActive !== 'boolean') {
+            return res
+                .status(400)
+                .json({message: 'isActive must be true or false', field: 'isActive'})
+        }
+
+        // An admin who locked themselves out could not undo it, and a company
+        // that deactivated its last admin would have no one left to manage it.
+        if (String(targetId) === String(req.user._id)) {
+            return res
+                .status(400)
+                .json({message: 'You cannot change your own account status'})
+        }
+
+        const target = await User.findById(targetId)
+        if (!target || !isSameCompany(req.user, target)) {
+            return res.status(404).json({message: 'User not found'})
+        }
+
+        target.isActive = isActive
+        await target.save()
+        await target.populate('team', 'name')
+
+        return res.json({user: target.toSafeJSON()})
+    } catch (err) {
+        console.error('Admin setUserStatus error:', err)
+        return res.status(500).json({message: 'Unable to update account status'})
     }
 }
 

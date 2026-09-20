@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import {useState, useEffect} from 'react'
 import '../styles/Dashboard.css'
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -9,7 +9,7 @@ import {
     FiPhone, FiUsers, FiMail, FiAward,
     FiBarChart2, FiGitMerge, FiActivity,
     FiArrowUp, FiArrowDown, FiUser, FiVideo, FiMove,
-     FiList, FiEdit3, FiFolder, FiAlertTriangle
+    FiList, FiEdit3, FiFolder, FiAlertTriangle
 } from 'react-icons/fi'
 import {useAuth} from '@/context/auth'
 import {fetchDashboardData} from '@/api/dashboard'

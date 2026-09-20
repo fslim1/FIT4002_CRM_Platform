@@ -8,7 +8,7 @@ exports.getDashboardData = async (req, res) => {
     try {
         const isSupervisor = req.user && ['Admin', 'Supervisor'].includes(req.user.role);
 
-        const { seesEverything, getCompanyUserIds, getTeamMemberIds } = require('../middleware/teamScope');
+        const {seesEverything, getCompanyUserIds, getTeamMemberIds} = require('../middleware/teamScope');
 
         let allowedUserIds = [];
         if (req.user) {
@@ -581,7 +581,7 @@ exports.getDashboardData = async (req, res) => {
             salesTrends = salesTrends.map(d => ({week: d.week, sales: d.sales}));
         }
 
-        const usersQuery = { _id: { $in: allowedUserIds } };
+        const usersQuery = {_id: {$in: allowedUserIds}};
         const users = req.user ? await User.find(usersQuery).select('fullName _id role') : [];
 
         let tableUsers = users;
@@ -594,7 +594,7 @@ exports.getDashboardData = async (req, res) => {
         const tableUserIds = tableUsers.map(u => u._id);
 
         const dealUserStats = await Deal.aggregate([
-            { $match: { createdBy: { $in: tableUserIds } } },
+            {$match: {createdBy: {$in: tableUserIds}}},
             ...dateMatchDealUpdated,
             {$match: {stage: "Won"}},
             {
@@ -608,7 +608,7 @@ exports.getDashboardData = async (req, res) => {
 
         const activityUserStats = await Customer.aggregate([
             {$unwind: "$interactions"},
-            {$match: {"interactions.createdBy": { $in: tableUserIds }}},
+            {$match: {"interactions.createdBy": {$in: tableUserIds}}},
             ...dateMatchInteraction,
             {
                 $group: {

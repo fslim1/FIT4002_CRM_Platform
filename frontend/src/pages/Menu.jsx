@@ -1,5 +1,5 @@
 import { useNavigate, useLocation } from 'react-router-dom'
-import { useAuth } from '@/context/auth'
+import {useAuth} from '@/context/auth'
 
 function Menu() {
     const navigate = useNavigate()

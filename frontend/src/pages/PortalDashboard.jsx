@@ -1,11 +1,11 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import {useCallback, useEffect, useRef, useState} from 'react';
+import {useNavigate} from 'react-router-dom';
 import {
     FiAlertCircle, FiBriefcase, FiCheckCircle, FiEdit2, FiHome, FiLogOut,
     FiMail, FiMapPin, FiPhone, FiSave, FiShield, FiTrendingUp, FiUser, FiX,
 } from 'react-icons/fi';
 import AppHeader from '@/components/AppHeader';
-import { Button } from '@/components/ui/button';
+import {Button} from '@/components/ui/button';
 import {
     clearPortalSession,
     fetchPortalDeals,
@@ -26,7 +26,7 @@ const EDITABLE_FIELDS = [
 const dealOutcome = (deal) =>
     deal.stage === 'Won' ? 'won' : deal.stage === 'Lost' ? 'lost' : 'open';
 
-function DealProgress({ deal }) {
+function DealProgress({deal}) {
     const lost = deal.stage === 'Lost';
 
     return (
@@ -275,7 +275,7 @@ function PortalDashboard() {
                                                 <div>
                                                     <div className="portal-deal-name">{deal.name}</div>
                                                     <span className="portal-deal-owner">
-                            <FiUser /> In charge: {deal.inCharge}
+                            <FiUser/> In charge: {deal.inCharge}
                           </span>
                                                 </div>
                                                 <span className={`portal-deal-status ${outcome}`}>

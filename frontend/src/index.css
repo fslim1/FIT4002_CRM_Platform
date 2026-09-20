@@ -295,3 +295,27 @@
     }
   }
 }
+
+/* Dropdown options: the tick on the selected option belongs after its label.
+ *
+ * A tick drawn with an absolutely positioned element depends on the option
+ * keeping the padding that reserves its space, and any stylesheet restyling
+ * dropdown items can take that room away and leave the tick over the label.
+ * Laying the option out as a flex line and sending the tick to the end of it
+ * holds whatever padding the option ends up with.
+ *
+ * Keyed on the attributes Radix itself sets on a select option, so it applies
+ * to any build of the component. The option's label is the one child carrying
+ * an id (Radix points aria-labelledby at it); the tick is not. Outside @layer
+ * on purpose, so it wins over the element's utility classes.
+ */
+[role="option"][data-radix-collection-item] {
+    display: flex;
+    align-items: center;
+}
+
+[role="option"][data-radix-collection-item] > span:not([id]) {
+    position: static;
+    order: 1;
+    margin-left: auto;
+}
