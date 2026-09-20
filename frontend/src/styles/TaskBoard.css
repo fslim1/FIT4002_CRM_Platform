@@ -1208,3 +1208,54 @@
     font-weight: 600;
     padding: 4px 8px;
 }
+
+.btn-delete {
+    flex: 0 0 auto;
+    width: 54px;
+    height: 54px;
+    padding: 0;
+
+    border-radius: 14px;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+
+    cursor: pointer;
+    transition: 0.2s ease;
+
+    background: linear-gradient(135deg, #a02020 0%, #7b1a1a 100%);
+    color: #fff;
+    border: none;
+}
+
+.btn-delete:hover {
+    transform: translateY(-1px);
+}
+
+
+.btn-filter {
+    height: 42px;
+
+    border-radius: 9999px;
+
+    background-color: #e1e1e1;
+    border: none;
+
+    font-weight: 600;
+    font-size: 14px;
+
+    padding: 0 20px;
+
+    color: #222;
+
+    cursor: pointer;
+
+    appearance: none;
+    -webkit-appearance: none;
+    -moz-appearance: none;
+}
+
+.btn-filter:hover {
+    background-color: #d8d8d8;
+}

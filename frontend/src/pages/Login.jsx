@@ -2,9 +2,8 @@ import {useCallback, useState} from 'react'
 import {Link, useLocation, useNavigate} from 'react-router-dom'
 import {ArrowRight, Lock, Mail} from 'lucide-react'
 import {useAuth} from '@/context/auth'
-import {requestGmailToken} from '@/context/AuthContext'
+import {requestGmailToken} from '@/api/gmailToken'
 import AppHeader from '@/components/AppHeader'
-import GoogleSignInButton from '@/components/GoogleSignInButton'
 import {Button} from '@/components/ui/button'
 import {Input} from '@/components/ui/input'
 import {Label} from '@/components/ui/label'
@@ -68,29 +67,10 @@ export default function Login() {
             setError('')
             setSubmitting(true)
             try {
+                // The token is the whole message: the server asks Google who
+                // it belongs to, so there is nothing for the browser to claim.
                 const accessToken = await requestGmailToken()
-
-                const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo', {
-                    headers: {
-                        Authorization: `Bearer ${accessToken}`,
-                    },
-                })
-
-                const data = await res.json()
-                const googleEmail = data.email
-                const name = data.name || (data.email ? data.email.split('@')[0] : 'User')
-                const googleId = data.sub
-
-                if (!googleEmail) {
-                    throw new Error('Google did not provide a verified email address.')
-                }
-
-                await loginWithGoogle({
-                    email: googleEmail,
-                    fullName: name,
-                    googleId,
-                    gmailAccessToken: accessToken,
-                })
+                await loginWithGoogle({gmailAccessToken: accessToken})
                 navigate(redirectTo, {replace: true})
             } catch (err) {
                 if (err?.error === 'access_denied' || err?.message?.includes('closed')) {
@@ -109,9 +89,6 @@ export default function Login() {
         [loginWithGoogle, navigate, redirectTo]
     )
 
-    const handleGoogleError = useCallback((message) => {
-        setError(message || 'Google sign-in is unavailable.')
-    }, [])
 
     return (
         <div

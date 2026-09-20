@@ -1,0 +1,546 @@
+﻿/* Admin User Management page - extends AdminSettings.css design system */
+
+/* Toolbar */
+.aum-toolbar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    flex-shrink: 0;
+}
+
+.aum-create-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    height: 42px;
+    padding: 0 20px;
+    border-radius: 30px;
+    border: none;
+    background: linear-gradient(135deg, #253984 0%, #2a2a72 100%);
+    color: #eaf6ff;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-left: auto;
+    transition: box-shadow 0.2s, transform 0.15s;
+    box-shadow: 0 4px 14px rgba(37, 57, 132, 0.35);
+}
+
+.aum-create-btn:hover {
+    box-shadow: 0 7px 22px rgba(37, 57, 132, 0.55);
+    transform: translateY(-1px);
+}
+
+/* Delete button in table rows */
+.aum-delete-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    border: 1px solid rgba(220, 38, 38, 0.25);
+    background: rgba(220, 38, 38, 0.06);
+    color: #dc2626;
+    cursor: pointer;
+    transition: background 0.18s, border-color 0.18s, transform 0.12s;
+    font-size: 15px;
+}
+
+.aum-delete-btn:hover {
+    background: rgba(220, 38, 38, 0.14);
+    border-color: rgba(220, 38, 38, 0.5);
+    transform: scale(1.07);
+}
+
+/* Status badges */
+.aum-status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+}
+
+.aum-status-badge.active {
+    background: rgba(34, 197, 94, 0.12);
+    color: #15803d;
+    border: 1px solid rgba(34, 197, 94, 0.3);
+}
+
+.aum-status-badge.inactive {
+    background: rgba(107, 114, 128, 0.1);
+    color: #6b7280;
+    border: 1px solid rgba(107, 114, 128, 0.25);
+}
+
+/* Inactive row dim */
+.aum-row-inactive td {
+    opacity: 0.62;
+}
+
+/* The row is dimmed to mark a closed account, but its actions are not:
+   reopening it is the thing most likely to be wanted there. */
+.aum-row-inactive td.aum-actions-cell {
+    opacity: 1;
+}
+
+.aum-row-inactive .admin-avatar.inactive {
+    background: #9ca3af;
+}
+
+.aum-team-name {
+    font-size: 13px;
+    color: #374151;
+}
+
+.aum-no-team {
+    color: #9ca3af;
+    font-style: italic;
+    font-size: 12px;
+}
+
+.aum-date {
+    font-size: 13px;
+    color: #6b7280;
+    white-space: nowrap;
+}
+
+/* Loading state */
+.aum-loading {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    flex: 1;
+    color: #6b7280;
+    font-size: 14px;
+}
+
+.aum-spinner {
+    width: 36px;
+    height: 36px;
+    border: 3px solid rgba(37, 57, 132, 0.15);
+    border-top-color: #253984;
+    border-radius: 50%;
+    animation: aum-spin 0.8s linear infinite;
+}
+
+@keyframes aum-spin {
+    to {
+        transform: rotate(360deg);
+    }
+}
+
+/* Feedback banner close button */
+.admin-feedback-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    border-radius: 50%;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    color: inherit;
+    margin-left: auto;
+    opacity: 0.7;
+    transition: opacity 0.15s;
+}
+
+.admin-feedback-close:hover {
+    opacity: 1;
+}
+
+/* ── Modal overlay ── */
+.aum-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.45);
+    backdrop-filter: blur(4px);
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    animation: aum-fade-in 0.18s ease;
+}
+
+@keyframes aum-fade-in {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.aum-modal {
+    background: #ffffff;
+    border-radius: 20px;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.22), 0 6px 20px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+    padding: 28px 28px 24px;
+    animation: aum-slide-up 0.22s ease;
+}
+
+.aum-modal-sm {
+    max-width: 420px;
+    text-align: center;
+}
+
+@keyframes aum-slide-up {
+    from {
+        opacity: 0;
+        transform: translateY(12px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.aum-modal-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 22px;
+}
+
+.aum-modal-header h2 {
+    font-family: 'Inter', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: #232528;
+    margin: 0 0 4px 0;
+}
+
+.aum-modal-header p {
+    font-size: 13px;
+    color: #6b7280;
+    margin: 0;
+}
+
+.aum-modal-close {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    border: 1px solid rgba(0, 0, 0, 0.1);
+    background: transparent;
+    cursor: pointer;
+    color: #6b7280;
+    font-size: 18px;
+    flex-shrink: 0;
+    transition: background 0.15s;
+}
+
+.aum-modal-close:hover {
+    background: #f3f4f6;
+}
+
+/* Form fields */
+.aum-modal-form {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.aum-field {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.aum-field label {
+    font-size: 13px;
+    font-weight: 600;
+    color: #374151;
+}
+
+.aum-req {
+    color: #dc2626;
+    margin-left: 2px;
+}
+
+.aum-optional {
+    color: #9ca3af;
+    font-weight: 400;
+    font-size: 12px;
+}
+
+.aum-field input,
+.aum-field select {
+    height: 44px;
+    border-radius: 10px;
+    border: 1.5px solid #e5e7eb;
+    padding: 0 14px;
+    font-size: 14px;
+    font-family: 'Inter', sans-serif;
+    color: #1f2937;
+    background: #f9fafb;
+    transition: border-color 0.18s, box-shadow 0.18s;
+    outline: none;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.aum-field input:focus,
+.aum-field select:focus {
+    border-color: #253984;
+    box-shadow: 0 0 0 3px rgba(37, 57, 132, 0.12);
+    background: #fff;
+}
+
+.aum-field input:disabled,
+.aum-field select:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Password field with toggle */
+.aum-pass-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.aum-pass-wrap input {
+    padding-right: 42px;
+}
+
+.aum-pass-toggle {
+    position: absolute;
+    right: 12px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #9ca3af;
+    font-size: 16px;
+    padding: 0;
+    transition: color 0.15s;
+}
+
+.aum-pass-toggle:hover {
+    color: #253984;
+}
+
+/* Password requirements */
+.aum-pw-rules {
+    margin-top: 6px;
+}
+
+/* Row actions */
+.aum-actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.aum-status-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 34px;
+    height: 34px;
+    border-radius: 8px;
+    border: 1px solid rgba(107, 114, 128, 0.25);
+    background: rgba(107, 114, 128, 0.06);
+    color: #4b5563;
+    cursor: pointer;
+    font-size: 15px;
+    transition: background 0.18s, border-color 0.18s, transform 0.12s;
+}
+
+.aum-status-btn:hover:not(:disabled) {
+    background: rgba(194, 65, 12, 0.12);
+    border-color: rgba(194, 65, 12, 0.4);
+    color: #c2410c;
+    transform: scale(1.07);
+}
+
+.aum-status-btn.reactivate:hover:not(:disabled) {
+    background: rgba(21, 128, 61, 0.12);
+    border-color: rgba(21, 128, 61, 0.4);
+    color: #15803d;
+}
+
+.aum-status-btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.aum-deact-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    margin: 0 auto 14px;
+    border-radius: 50%;
+    background: #fff7ed;
+    color: #c2410c;
+    font-size: 22px;
+}
+
+/* Role badge beside its assignment control */
+.aum-assign-cell {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* Field hints */
+.aum-field-hint {
+    font-size: 12px;
+    color: #6b7280;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.aum-field-hint.error {
+    color: #dc2626;
+}
+
+/* Form error banner */
+.aum-form-error {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(220, 38, 38, 0.08);
+    border: 1px solid rgba(220, 38, 38, 0.25);
+    border-radius: 10px;
+    padding: 10px 14px;
+    font-size: 13px;
+    color: #dc2626;
+}
+
+/* Modal actions */
+.aum-modal-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    margin-top: 6px;
+    padding-top: 16px;
+    border-top: 1px solid #f3f4f6;
+}
+
+.aum-modal-sm .aum-modal-actions {
+    justify-content: center;
+}
+
+.aum-btn-primary {
+    height: 42px;
+    padding: 0 22px;
+    border-radius: 10px;
+    border: none;
+    background: linear-gradient(135deg, #253984 0%, #2a2a72 100%);
+    color: #eaf6ff;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: box-shadow 0.2s, transform 0.15s;
+}
+
+.aum-btn-primary:hover:not(:disabled) {
+    box-shadow: 0 6px 18px rgba(37, 57, 132, 0.45);
+    transform: translateY(-1px);
+}
+
+.aum-btn-primary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.aum-btn-secondary {
+    height: 42px;
+    padding: 0 20px;
+    border-radius: 10px;
+    border: 1.5px solid #e5e7eb;
+    background: #ffffff;
+    color: #374151;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.aum-btn-secondary:hover:not(:disabled) {
+    background: #f9fafb;
+}
+
+.aum-btn-secondary:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+.aum-btn-danger {
+    height: 42px;
+    padding: 0 22px;
+    border-radius: 10px;
+    border: none;
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    color: #ffffff;
+    font-family: 'Inter', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: box-shadow 0.2s, transform 0.15s;
+}
+
+.aum-btn-danger:hover:not(:disabled) {
+    box-shadow: 0 6px 18px rgba(220, 38, 38, 0.4);
+    transform: translateY(-1px);
+}
+
+.aum-btn-danger:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Delete modal */
+.aum-del-icon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    background: rgba(220, 38, 38, 0.1);
+    color: #dc2626;
+    font-size: 24px;
+    margin: 0 auto 16px;
+}
+
+.aum-modal-sm h2 {
+    font-family: 'Inter', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: #232528;
+    margin: 0 0 10px;
+}
+
+.aum-del-desc {
+    font-size: 14px;
+    line-height: 1.6;
+    color: #4b5563;
+    margin: 0 0 20px;
+}

@@ -30,7 +30,7 @@ exports.getDashboardData = async (req, res) => {
             targetUserIds = [req.user._id];
         }
 
-        const dealMatch = targetUserIds.length > 0
+        const dealMatch = targetUserIds.length > 0 
             ? [{$match: {createdBy: {$in: targetUserIds}}}]
             : [];
 

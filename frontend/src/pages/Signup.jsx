@@ -14,7 +14,7 @@ import {
     Users,
 } from 'lucide-react'
 import {useAuth} from '@/context/auth'
-import {requestGmailToken} from '@/context/AuthContext'
+import {requestGmailToken} from '@/api/gmailToken'
 import AppHeader from '@/components/AppHeader'
 import KanbanMock from '@/components/KanbanMock'
 import {Button} from '@/components/ui/button'
@@ -24,15 +24,6 @@ import {Card, CardContent} from '@/components/ui/card'
 import {Alert, AlertDescription} from '@/components/ui/alert'
 import PasswordChecklist from '@/components/PasswordChecklist'
 import {isPasswordValid} from '@/lib/passwordPolicy'
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select'
-
-const ROLES = ['Admin', 'Supervisor', 'User']
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
 
@@ -100,7 +91,6 @@ export default function Signup() {
     const {signup} = useAuth()
     const navigate = useNavigate()
     const emailRef = useRef(null)
-    const roleRef = useRef(null)
     const fieldToFocus = useRef(null)
 
     const [form, setForm] = useState({
@@ -108,12 +98,10 @@ export default function Signup() {
         email: '',
         password: '',
         companyName: '',
-        role: 'User',
     })
     const [error, setError] = useState('')
     const [emailError, setEmailError] = useState('')
     const [passwordError, setPasswordError] = useState('')
-    const [roleError, setRoleError] = useState('')
     const [phase, setPhase] = useState('idle')
     const [focusRequest, setFocusRequest] = useState(0)
 
@@ -150,12 +138,6 @@ export default function Signup() {
         )
     }
 
-    const onRoleChange = (value) => {
-        setForm((prev) => ({...prev, role: value}))
-        setRoleError('')
-        setError('')
-    }
-
     const goToConfirmation = (email, state) =>
         navigate(`/verify-email?email=${encodeURIComponent(email)}`, {replace: true, state})
 
@@ -164,7 +146,6 @@ export default function Signup() {
         setError('')
         setEmailError('')
         setPasswordError('')
-        setRoleError('')
 
         if (
             !form.fullName ||
@@ -188,10 +169,6 @@ export default function Signup() {
             setPasswordError('Please meet all of the password requirements.')
             return
         }
-        if (!ROLES.includes(form.role)) {
-            setError('Please select a valid role.')
-            return
-        }
 
         try {
             // Linking Gmail is a convenience, not a prerequisite. When Google
@@ -211,7 +188,6 @@ export default function Signup() {
                 email: form.email.trim(),
                 password: form.password,
                 companyName: form.companyName.trim(),
-                role: form.role,
                 gmailAccessToken,
             })
 
@@ -237,9 +213,6 @@ export default function Signup() {
                 // The address was rejected: point at the field that needs fixing.
                 setEmailError(message)
                 focusAfterRejection(emailRef)
-            } else if (field === 'role' && message) {
-                setRoleError(message)
-                focusAfterRejection(roleRef)
             } else if (field === 'password' && message) {
                 setPasswordError(message)
             } else {
@@ -322,48 +295,6 @@ export default function Signup() {
                                         autoComplete="organization"
                                         disabled={submitting}
                                     />
-
-                                    <div className="space-y-2">
-                                        <Label htmlFor="role" className="text-slate-700">
-                                            Role
-                                        </Label>
-                                        <Select
-                                            value={form.role}
-                                            onValueChange={onRoleChange}
-                                            disabled={submitting}
-                                        >
-                                            <SelectTrigger
-                                                id="role"
-                                                ref={roleRef}
-                                                aria-invalid={roleError ? true : undefined}
-                                                aria-describedby={roleError ? 'role-error' : 'role-hint'}
-                                                className="h-12 w-full rounded-xl border-slate-200 bg-slate-100 text-slate-800"
-                                            >
-                                                <SelectValue placeholder="Select a role"/>
-                                            </SelectTrigger>
-                                            <SelectContent>
-                                                {ROLES.map((r) => (
-                                                    <SelectItem key={r} value={r}>
-                                                        {r}
-                                                    </SelectItem>
-                                                ))}
-                                            </SelectContent>
-                                        </Select>
-                                        {roleError ? (
-                                            <p
-                                                id="role-error"
-                                                role="alert"
-                                                className="text-sm font-medium text-red-600"
-                                            >
-                                                {roleError}
-                                            </p>
-                                        ) : (
-                                            <p id="role-hint" className="text-xs text-slate-500">
-                                                Pick the role you need. An administrator at your company can
-                                                change it later from Settings.
-                                            </p>
-                                        )}
-                                    </div>
 
                                     {error && (
                                         <Alert variant="destructive">

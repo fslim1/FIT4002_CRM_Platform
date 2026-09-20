@@ -1,4 +1,3 @@
-import React from 'react';
 import {GmailLinker} from '../components/GmailLinker';
 
 export default function Settings() {

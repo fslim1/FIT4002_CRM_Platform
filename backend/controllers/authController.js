@@ -1,7 +1,6 @@
 const User = require('../models/User')
-const {ROLES} = require('../models/User')
 const {signToken} = require('../middleware/auth')
-const {verifyIdToken} = require('../services/googleAuth')
+const {verifyIdToken, verifyAccessToken} = require('../services/googleAuth')
 const {verifyEmailExists} = require('../services/emailVerification')
 const {validatePassword} = require('../services/passwordPolicy')
 const {
@@ -23,7 +22,7 @@ const normalizeEmail = (email) => String(email || '').toLowerCase().trim()
 
 exports.signup = async (req, res) => {
     try {
-        const {fullName, email, password, companyName, role, gmailAccessToken} = req.body || {}
+        const {fullName, email, password, companyName, gmailAccessToken} = req.body || {}
 
         if (!fullName || !email || !password || !companyName) {
             return res
@@ -46,11 +45,6 @@ exports.signup = async (req, res) => {
                 .status(400)
                 .json({message: passwordCheck.message, field: 'password', failed: passwordCheck.failed})
         }
-        if (role && !ROLES.includes(role)) {
-            return res
-                .status(400)
-                .json({message: `Role must be one of: ${ROLES.join(', ')}`, field: 'role'})
-        }
 
         const existing = await User.findOne({email: normalizeEmail(email)})
         if (existing) {
@@ -64,8 +58,6 @@ exports.signup = async (req, res) => {
             })
         }
 
-        const requestedRole = role || 'User'
-
         // A well-formed address is not necessarily a real one: confirm the
         // mailbox exists before an account is created against it.
         const emailCheck = await verifyEmailExists(email)
@@ -75,12 +67,14 @@ exports.signup = async (req, res) => {
 
         const confirmationRequired = isConfirmationRequired()
 
+        // Role is always 'User' on public signup — every other role is granted
+        // by an Admin from user management.
         const user = await User.create({
             fullName: fullName.trim(),
             email: normalizeEmail(email),
             password,
             companyName: companyName.trim(),
-            role: requestedRole,
+            role: 'User',
             emailVerified: !confirmationRequired,
             gmailAccessToken: gmailAccessToken || null,
             isGmailLinked: Boolean(gmailAccessToken),
@@ -137,8 +131,16 @@ exports.login = async (req, res) => {
             return res.status(401).json({message: 'Invalid email or password'})
         }
 
-        // Checked only once the password is right, so the response never
-        // reveals which addresses have accounts.
+        // The checks below name a specific reason for the refusal, so they run
+        // only once the password is right. Before that, every failure has to
+        // look alike, or the response tells a stranger which addresses have
+        // accounts and which of those are closed.
+        if (user.isActive === false) {
+            return res
+                .status(401)
+                .json({message: 'This account has been deactivated. Please contact your administrator.'})
+        }
+
         if (!user.emailVerified) {
             return res.status(403).json({
                 message: 'Please confirm your email address before logging in.',
@@ -234,29 +236,28 @@ exports.me = async (req, res) => {
 
 exports.googleLogin = async (req, res) => {
     try {
-        const {credential, email, fullName, googleId, gmailAccessToken} = req.body || {}
+        const {credential, gmailAccessToken} = req.body || {}
 
-        let profile = {}
-
-        if (email && googleId) {
-            profile = {
-                googleId,
-                email: email.toLowerCase(),
-                fullName: fullName || email.split('@')[0],
-            }
-        } else if (typeof credential === 'string') {
-            try {
+        // Who the caller is has to come from a token Google issued to this
+        // application, never from the request body: an address and an account
+        // id are things anyone can type, so trusting them would let a caller
+        // sign in as whoever they named.
+        let profile
+        try {
+            if (typeof credential === 'string' && credential) {
                 profile = await verifyIdToken(credential)
-            } catch (err) {
-                const status = err.status || 401
+            } else if (typeof gmailAccessToken === 'string' && gmailAccessToken) {
+                profile = await verifyAccessToken(gmailAccessToken)
+            } else {
                 return res
-                    .status(status)
-                    .json({message: err.message || 'Google authentication failed'})
+                    .status(400)
+                    .json({message: 'Missing Google authentication payload'})
             }
-        } else {
+        } catch (err) {
+            const status = err.status || 401
             return res
-                .status(400)
-                .json({message: 'Missing Google authentication payload'})
+                .status(status)
+                .json({message: err.message || 'Google authentication failed'})
         }
 
         let user = await User.findOne({
@@ -264,6 +265,12 @@ exports.googleLogin = async (req, res) => {
         })
 
         if (user) {
+            // Reject deactivated accounts.
+            if (user.isActive === false) {
+                return res
+                    .status(401)
+                    .json({message: 'This account has been deactivated. Please contact your administrator.'})
+            }
             if (!user.googleId) user.googleId = profile.googleId
             // Google has already proven the address belongs to this person.
             if (!user.emailVerified) user.emailVerified = true
@@ -291,5 +298,5 @@ exports.googleLogin = async (req, res) => {
     } catch (err) {
         console.error('Google login error:', err)
         return res.status(500).json({message: 'Unable to complete Google login'})
-    }
+    }    
 }

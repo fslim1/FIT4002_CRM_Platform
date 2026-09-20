@@ -3,8 +3,8 @@
 //
 // Imports in this project leave the extension off, so Vite picks one of the
 // pair by its own resolution order (.js and .jsx before .ts and .tsx) and the
-// other silently stops rendering. Edits then land in a file nobody sees, which
-// is how the tick on a selected dropdown option kept coming back.
+// other never renders. Edits made to the wrong twin appear to have no effect,
+// and the difference between the two is invisible at the import site.
 
 import {readdirSync, statSync} from 'node:fs'
 import {join, relative, dirname} from 'node:path'

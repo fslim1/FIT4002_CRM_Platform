@@ -16,3 +16,16 @@ export const updateUserPermissions = (userId, permissions) =>
 // pickers. Returns a plain array of {_id, fullName, email, role}.
 export const getUsers = () =>
     api.get('/users/assignable').then((r) => r.data)
+
+// ─── Admin user management (POST/DELETE /api/admin/users) ────────────────────
+export const fetchAdminUsers = (params = {}) =>
+    api.get('/admin/users', {params}).then((r) => r.data)
+
+export const createUser = (payload) =>
+    api.post('/admin/users', payload).then((r) => r.data)
+
+export const setUserStatus = (userId, isActive) =>
+    api.patch(`/admin/users/${userId}/status`, {isActive}).then((r) => r.data)
+
+export const deleteUser = (userId) =>
+    api.delete(`/admin/users/${userId}`).then((r) => r.data)

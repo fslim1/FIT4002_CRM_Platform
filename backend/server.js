@@ -50,6 +50,7 @@ app.get('/', (req, res) => {
 
 // Routes — all must be registered before error handlers
 app.use('/api/auth', authRoutes)
+app.use('/api/admin', require('./routes/adminRoutes'))
 app.use('/api/customers', require('./routes/customerRoutes'))
 app.use('/api/interactions', require('./routes/interactionRoutes'))
 app.use('/api/deals', require('./routes/dealRoutes'))

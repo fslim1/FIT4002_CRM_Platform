@@ -29,6 +29,11 @@ const requireAuth = async (req, res, next) => {
             return res.status(401).json({message: 'Invalid session'})
         }
 
+        // Reject deactivated accounts even if the JWT is still technically valid.
+        if (user.isActive === false) {
+            return res.status(401).json({message: 'This account has been deactivated.'})
+        }
+
         req.user = user
         next()
     } catch (err) {

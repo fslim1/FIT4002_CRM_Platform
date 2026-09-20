@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import {useState} from 'react';
 import {FiX, FiSend, FiAlertCircle} from "react-icons/fi";
 import api from '../api/client';
 

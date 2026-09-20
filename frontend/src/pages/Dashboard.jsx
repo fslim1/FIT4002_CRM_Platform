@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import {useState, useEffect} from 'react'
 import '../styles/Dashboard.css'
 import {
     AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -9,7 +9,7 @@ import {
     FiPhone, FiUsers, FiMail, FiAward,
     FiBarChart2, FiGitMerge, FiActivity,
     FiArrowUp, FiArrowDown, FiUser, FiVideo, FiMove,
-    FiFileText, FiPaperclip, FiEdit2, FiList, FiFile, FiEdit3, FiFolder, FiAlertTriangle
+    FiList, FiEdit3, FiFolder, FiAlertTriangle
 } from 'react-icons/fi'
 import {useAuth} from '@/context/auth'
 import {fetchDashboardData} from '@/api/dashboard'
@@ -22,24 +22,20 @@ import {
     useSensors,
 } from '@dnd-kit/core';
 import {
-    arrayMove,
     arraySwap,
     SortableContext,
     sortableKeyboardCoordinates,
-    rectSortingStrategy,
     rectSwappingStrategy,
     useSortable,
 } from '@dnd-kit/sortable';
 import {CSS} from '@dnd-kit/utilities';
 
-const POLL_MS     = 30000
 const ACCENT = '#253984'
 const ACCENT_DIM = '#2A2A72'
 const CHART_GREEN = '#4DC9C9'
 const CHART_GREY = '#A4A4A4'
 const fmtCurrency = (v) => v >= 1000 ? `$${(v / 1000).toFixed(0)}k` : `$${v}`
 const fmtMoney = (v) => new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD', maximumFractionDigits: 0 }).format(v)
-const fmtTime = (iso) => { const d = new Date(iso); return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }) }
 
 function Skeleton({ w = '100%', h = 20 }) {
     return <div className="skeleton" style={{ width: w, height: h }} />
@@ -138,7 +134,7 @@ function SortableCard({id, title, subTitle, headerRight, children, isEditing}) {
 export default function Dashboard() {
     const [data, setData] = useState(null)
     const [loading, setLoading] = useState(true)
-    const [error, setError] = useState(null)
+    const [error] = useState(null)
     const [clock, setClock] = useState('')
     const [lastUpdated, setLastUpdated] = useState('')
     const [salesChartType, setSalesChartType] = useState('area')

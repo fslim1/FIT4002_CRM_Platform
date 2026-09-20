@@ -106,9 +106,8 @@ const SelectItem = React.forwardRef(
         >
             <SelectPrimitive.ItemText>{children}</SelectPrimitive.ItemText>
             {/* The tick follows the label in normal flow, so it sits at the end
-                of the row and cannot be drawn over the text. Positioning it
-                absolutely instead relies on the option keeping the padding that
-                reserves its space, which any other stylesheet can take away. */}
+                of the row and cannot be drawn over the text, whatever padding
+                the option is given. */}
             <SelectPrimitive.ItemIndicator className="ml-auto flex h-4 w-4 shrink-0 items-center justify-center">
                 <Check className="h-4 w-4"/>
             </SelectPrimitive.ItemIndicator>

@@ -92,6 +92,12 @@ const userSchema = new mongoose.Schema(
             type: Boolean,
             default: false,
         },
+        // A2/A21: soft-disable flag. False prevents login without deleting history.
+        isActive: {
+            type: Boolean,
+            default: true,
+            index: true,
+        },
     },
     {timestamps: true}
 )
@@ -131,6 +137,7 @@ userSchema.methods.toSafeJSON = function () {
         createdAt: this.createdAt,
         isGmailLinked: this.isGmailLinked,
         gmailAccessToken: this.gmailAccessToken,
+        isActive: this.isActive !== false, // default true if field is missing
     }
 }
 

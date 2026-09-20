@@ -298,18 +298,16 @@
 
 /* Dropdown options: the tick on the selected option belongs after its label.
  *
- * Several shadcn versions draw that tick with an absolutely positioned element
- * — some pinned left, some right — and rely on the option's own padding to
- * leave room for it. Any stylesheet that restyles dropdown items takes that
- * room away, and the tick ends up drawn over the label. Laying the row out as
- * a flex line and sending the tick to the end of it keeps the tick in the
- * right place whatever the option's padding is, and whichever version of
- * components/ui/select is in the tree.
+ * A tick drawn with an absolutely positioned element depends on the option
+ * keeping the padding that reserves its space, and any stylesheet restyling
+ * dropdown items can take that room away and leave the tick over the label.
+ * Laying the option out as a flex line and sending the tick to the end of it
+ * holds whatever padding the option ends up with.
  *
- * Keyed on the attributes Radix itself sets on a select option, so it holds
- * even if the component is regenerated. The option's label is the one child
- * carrying an id (Radix points aria-labelledby at it); the tick is not.
- * Outside @layer on purpose, so it wins over the element's utility classes.
+ * Keyed on the attributes Radix itself sets on a select option, so it applies
+ * to any build of the component. The option's label is the one child carrying
+ * an id (Radix points aria-labelledby at it); the tick is not. Outside @layer
+ * on purpose, so it wins over the element's utility classes.
  */
 [role="option"][data-radix-collection-item] {
     display: flex;
