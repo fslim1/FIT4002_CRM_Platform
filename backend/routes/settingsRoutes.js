@@ -2,6 +2,10 @@ const express = require('express')
 const SystemSettings = require('../models/SystemSettings')
 const Team = require('../models/Team')
 const User = require('../models/User')
+const RiskBenchmark = require('../models/RiskBenchmark')
+const DealRiskScore = require('../models/DealRiskScore')
+const RiskExclusionSetting = require('../models/RiskExclusionSetting')
+const RiskWeightSetting = require('../models/RiskWeightSetting')
 const {requireAuth, requireRole} = require('../middleware/auth')
 const {companyPattern, sameCompanyName} = require('../middleware/teamScope')
 
@@ -27,7 +31,8 @@ router.get('/', requireAuth, async (req, res) => {
 })
 
 // PUT /api/settings: update the admin's company settings (Admin only).
-// Renaming the company cascades to every user and team of that company.
+// Renaming the company cascades to every user, team, and risk-scoring
+// record of that company, so their companyKey scoping never breaks.
 router.put('/', requireAuth, requireRole('Admin'), async (req, res) => {
     try {
         const {companyName, timezone, currency, language} = req.body || {}
@@ -84,6 +89,9 @@ router.put('/', requireAuth, requireRole('Admin'), async (req, res) => {
 
         if (renaming) {
             const previousPattern = companyPattern(previousCompany)
+            const previousKey = previousCompany.toLowerCase()
+            const newKey = updates.companyName.toLowerCase()
+
             await User.updateMany(
                 {companyName: previousPattern},
                 {companyName: updates.companyName}
@@ -92,6 +100,13 @@ router.put('/', requireAuth, requireRole('Admin'), async (req, res) => {
                 {company: previousPattern},
                 {company: updates.companyName}
             )
+            // Keep every risk-scoring record scoped correctly under the new name.
+            await Promise.all([
+                RiskBenchmark.updateMany({companyKey: previousKey}, {companyKey: newKey, companyName: updates.companyName}),
+                DealRiskScore.updateMany({companyKey: previousKey}, {companyKey: newKey}),
+                RiskExclusionSetting.updateMany({companyKey: previousKey}, {companyKey: newKey}),
+                RiskWeightSetting.updateMany({companyKey: previousKey}, {companyKey: newKey}),
+            ])
         }
 
         return res.json({settings: serializeSettings(settings)})
