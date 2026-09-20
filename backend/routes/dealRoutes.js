@@ -7,14 +7,15 @@ const DealLog = require('../models/DealLog')
 const Customer = require('../models/Customer')
 const User = require('../models/User')
 const {
-    getVisibleDealFilter,
-    getVisibleCustomerFilter,
-    getVisibleDealLogFilter,
-    canAccessDeal,
-    getCompanyUserIds,
-    getTeamMemberIds
+  getVisibleDealFilter,
+  getVisibleCustomerFilter,
+  getVisibleDealLogFilter,
+  canAccessDeal,
+  getCompanyUserIds,
+  getTeamMemberIds
 } = require('../middleware/teamScope')
-const {hasPermission} = require('../middleware/permissions')
+const { hasPermission } = require('../middleware/permissions')
+const { getDaysInStage, getDaysSinceActivity, getOverdueTaskCount } = require('../services/riskFactors')
 
 
 const STAGE_ORDER = [
@@ -27,45 +28,45 @@ const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 // Optional query params: ?userId=<id> or ?teamId=<id>
 router.get('/', requireAuth, async (req, res) => {
   try {
-      const {userId, teamId} = req.query
+    const { userId, teamId } = req.query
 
-      if (userId) {
-          // Validate the target user exists and is accessible
-          const targetUser = await User.findById(userId).select('_id team companyName')
-          if (!targetUser) return res.status(404).json({message: 'User not found'})
+    if (userId) {
+      // Validate the target user exists and is accessible
+      const targetUser = await User.findById(userId).select('_id team companyName')
+      if (!targetUser) return res.status(404).json({ message: 'User not found' })
 
-          // Admin/viewAllData: any user in their company
-          // Supervisor: only users in their own team
-          if (req.user.role === 'Admin' || hasPermission(req.user, 'viewAllData')) {
-              const companyIds = await getCompanyUserIds(req.user)
-              const inCompany = companyIds.some(id => String(id) === String(userId))
-              if (!inCompany) return res.status(403).json({message: 'Access denied'})
-          } else if (req.user.role === 'Supervisor') {
-              const teamIds = await getTeamMemberIds(req.user)
-              const inTeam = teamIds.some(id => String(id) === String(userId))
-              if (!inTeam) return res.status(403).json({message: 'Access denied'})
-          } else {
-              return res.status(403).json({message: 'Insufficient permissions'})
-          }
-
-          const deals = await Deal.find({createdBy: targetUser._id}).sort({createdAt: -1})
-          return res.json(deals)
+      // Admin/viewAllData: any user in their company
+      // Supervisor: only users in their own team
+      if (req.user.role === 'Admin' || hasPermission(req.user, 'viewAllData')) {
+        const companyIds = await getCompanyUserIds(req.user)
+        const inCompany = companyIds.some(id => String(id) === String(userId))
+        if (!inCompany) return res.status(403).json({ message: 'Access denied' })
+      } else if (req.user.role === 'Supervisor') {
+        const teamIds = await getTeamMemberIds(req.user)
+        const inTeam = teamIds.some(id => String(id) === String(userId))
+        if (!inTeam) return res.status(403).json({ message: 'Access denied' })
+      } else {
+        return res.status(403).json({ message: 'Insufficient permissions' })
       }
 
-      if (teamId) {
-          // Only Admin or Supervisor with viewAllData
-          if (req.user.role !== 'Admin' && !hasPermission(req.user, 'viewAllData')) {
-              return res.status(403).json({message: 'Insufficient permissions'})
-          }
-          const teamMembers = await User.find({team: teamId}).select('_id')
-          const memberIds = teamMembers.map(m => m._id)
-          const deals = await Deal.find({createdBy: {$in: memberIds}}).sort({createdAt: -1})
-          return res.json(deals)
-      }
+      const deals = await Deal.find({ createdBy: targetUser._id }).sort({ createdAt: -1 })
+      return res.json(deals)
+    }
 
-      // Default: return all deals visible to this user
-      const scope = await getVisibleDealFilter(req.user)
-      const deals = await Deal.find(scope).sort({createdAt: -1})
+    if (teamId) {
+      // Only Admin or Supervisor with viewAllData
+      if (req.user.role !== 'Admin' && !hasPermission(req.user, 'viewAllData')) {
+        return res.status(403).json({ message: 'Insufficient permissions' })
+      }
+      const teamMembers = await User.find({ team: teamId }).select('_id')
+      const memberIds = teamMembers.map(m => m._id)
+      const deals = await Deal.find({ createdBy: { $in: memberIds } }).sort({ createdAt: -1 })
+      return res.json(deals)
+    }
+
+    // Default: return all deals visible to this user
+    const scope = await getVisibleDealFilter(req.user)
+    const deals = await Deal.find(scope).sort({ createdAt: -1 })
     res.json(deals)
   } catch {
     res.status(500).json({ message: 'Failed to fetch deals' })
@@ -75,8 +76,8 @@ router.get('/', requireAuth, async (req, res) => {
 // GET all status logs across visible deals (for Deal History)
 router.get('/logs', requireAuth, async (req, res) => {
   try {
-      const scope = await getVisibleDealFilter(req.user)
-      const deals = await Deal.find({...scope, 'statusLogs.0': {$exists: true}}, 'name statusLogs')
+    const scope = await getVisibleDealFilter(req.user)
+    const deals = await Deal.find({ ...scope, 'statusLogs.0': { $exists: true } }, 'name statusLogs')
     const logs = []
     deals.forEach(deal => {
       deal.statusLogs.forEach(log => {
@@ -110,19 +111,18 @@ router.get('/logs', requireAuth, async (req, res) => {
 
 
 // CREATE deal
-// CREATE deal
 router.post('/', requireAuth, requireRole('User', 'Admin'), async (req, res) => {
   try {
     const { name, company, price, priority, probability, assignee, customer } = req.body
 
     if (customer) {
         // Deals can only be linked to customers the creator can actually see
-        const customerScope = await getVisibleCustomerFilter(req.user)
+      const customerScope = await getVisibleCustomerFilter(req.user)
       const existingCustomer = await Customer.findOne({
-          $and: [
-              {fullName: {$regex: `^${escapeRegex(customer)}$`, $options: 'i'}},
-              customerScope
-          ]
+        $and: [
+          { fullName: { $regex: `^${escapeRegex(customer)}$`, $options: 'i' } },
+          customerScope
+        ]
       })
       if (!existingCustomer) {
         return res.status(400).json({ message: 'Customer does not exist in the system' })
@@ -141,6 +141,7 @@ router.post('/', requireAuth, requireRole('User', 'Admin'), async (req, res) => 
     const deal = new Deal({
       name, company, price, priority, probability, assignee, customer,
       stage: 'Qualified',
+      stageEnteredDate: new Date(),
       createdBy: req.user._id
     })
     await deal.save()
@@ -156,8 +157,8 @@ router.patch('/:id/stage', requireAuth, async (req, res) => {
     const { stage } = req.body
     const deal = await Deal.findById(req.params.id)
     if (!deal) return res.status(404).json({ message: 'Deal not found' })
-      if (!(await canAccessDeal(req.user, deal)))
-          return res.status(403).json({message: 'You do not have access to this deal'})
+    if (!(await canAccessDeal(req.user, deal)))
+      return res.status(403).json({ message: 'You do not have access to this deal' })
 
     const currentIndex = STAGE_ORDER.indexOf(deal.stage)
     const nextIndex = STAGE_ORDER.indexOf(stage)
@@ -174,6 +175,8 @@ router.patch('/:id/stage', requireAuth, async (req, res) => {
 
     deal.statusLogs.push({ fromStage: deal.stage, toStage: stage, changedBy: req.user._id })
     deal.stage = stage
+    // H3: a stage change always resets the clock for daysInStage
+    deal.stageEnteredDate = new Date()
     await deal.save()
     res.json(deal)
   } catch {
@@ -190,14 +193,16 @@ router.patch('/:id/outcome', requireAuth, async (req, res) => {
 
     const deal = await Deal.findById(req.params.id)
     if (!deal) return res.status(404).json({ message: 'Deal not found' })
-      if (!(await canAccessDeal(req.user, deal)))
-          return res.status(403).json({message: 'You do not have access to this deal'})
+    if (!(await canAccessDeal(req.user, deal)))
+      return res.status(403).json({ message: 'You do not have access to this deal' })
 
     if (['Won', 'Lost'].includes(deal.stage))
       return res.status(400).json({ message: 'Deal already finalised' })
 
     deal.statusLogs.push({ fromStage: deal.stage, toStage: outcome, changedBy: req.user._id })
     deal.stage = outcome
+    // H3: Won/Lost is still a stage transition for this purpose
+    deal.stageEnteredDate = new Date()
     await deal.save()
     res.json(deal)
   } catch {
@@ -245,6 +250,35 @@ router.patch('/:id/probability', requireAuth, async (req, res) => {
     } catch {
         res.status(500).json({message: 'Failed to update probability'})
     }
+})
+
+// GET /api/deals/:id/risk-factors — H3, H4, H5 combined.
+// Returns the three raw risk signals for a single deal. This does not
+// compute a risk score/label — that's a later story once benchmarks (H1/H2)
+// and these factors are both ready to be combined.
+router.get('/:id/risk-factors', requireAuth, async (req, res) => {
+  try {
+    const deal = await Deal.findById(req.params.id)
+    if (!deal) return res.status(404).json({ message: 'Deal not found' })
+    if (!(await canAccessDeal(req.user, deal)))
+      return res.status(403).json({ message: 'You do not have access to this deal' })
+
+    const [daysSinceActivity, overdueTaskCount] = await Promise.all([
+      getDaysSinceActivity(deal),
+      getOverdueTaskCount(deal._id),
+    ])
+
+    res.json({
+      dealId: deal._id,
+      daysInStage: getDaysInStage(deal),
+      daysSinceActivity: daysSinceActivity.days,
+      neverContacted: daysSinceActivity.neverContacted,
+      overdueTaskCount,
+    })
+  } catch (err) {
+    console.error('Get risk factors error:', err)
+    res.status(500).json({ message: 'Failed to compute risk factors' })
+  }
 })
 
 module.exports = router
