@@ -8,7 +8,7 @@ const companyFromEmail = (email) => {
 }
 
 const isValidEmail = (email) =>
-    typeof email === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+    typeof email === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
 
 exports.signup = async (req, res) => {
     try {
@@ -33,7 +33,9 @@ exports.signup = async (req, res) => {
                 .json({message: 'Password must be at least 8 characters'})
         }
 
-        const existing = await User.findOne({email: email.toLowerCase()})
+        const normalizedEmail = email.trim().toLowerCase()
+
+        const existing = await User.findOne({email: normalizedEmail})
         if (existing) {
             return res
                 .status(409)
@@ -44,7 +46,7 @@ exports.signup = async (req, res) => {
         // the admin user management endpoint (POST /api/admin/users).
         const user = await User.create({
             fullName: fullName.trim(),
-            email: email.toLowerCase().trim(),
+            email: normalizedEmail,
             password,
             companyName: companyName.trim(),
             role: 'User',
@@ -71,7 +73,8 @@ exports.login = async (req, res) => {
             return res.status(400).json({message: 'Email and password are required'})
         }
 
-        const user = await User.findOne({email: email.toLowerCase()}).select('+password')
+        const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : ''
+        const user = await User.findOne({email: normalizedEmail}).select('+password')
         if (!user) {
             return res.status(401).json({message: 'Invalid email or password'})
         }
@@ -110,12 +113,15 @@ exports.googleLogin = async (req, res) => {
         if (email && googleId) {
             profile = {
                 googleId,
-                email: email.toLowerCase(),
+                email: typeof email === 'string' ? email.trim().toLowerCase() : '',
                 fullName: fullName || email.split('@')[0],
             }
         } else if (typeof credential === 'string') {
             try {
                 profile = await verifyIdToken(credential)
+                if (profile.email) {
+                    profile.email = profile.email.trim().toLowerCase()
+                }
             } catch (err) {
                 const status = err.status || 401
                 return res

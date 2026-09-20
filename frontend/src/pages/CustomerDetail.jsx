@@ -16,6 +16,11 @@ const CustomerDetail = () => {
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState(null);
   const fileInputRef = useRef(null);
+  const apiBase = (
+    import.meta.env.VITE_API_URL || "http://localhost:5001/api"
+  ).replace(/\/$/, "");
+
+  const backendRoot = apiBase.replace(/\/api\/?$/, "");
 
   const fetchCustomer = useCallback(
     async (showLoading = true) => {
@@ -293,7 +298,7 @@ const CustomerDetail = () => {
                     </div>
                     <div className="file-actions">
                       <a
-                        href={`${import.meta.env.VITE_API_URL || "http://localhost:5001"}/api/customers/${customer._id}/files/${file._id}/view`}
+                        href={`${apiBase}/customers/${customer._id}/files/${file._id}/view`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="btn-link"
@@ -301,7 +306,7 @@ const CustomerDetail = () => {
                         Open
                       </a>
                       <a
-                        href={`${import.meta.env.VITE_API_URL || "http://localhost:5001"}/api/customers/${customer._id}/files/${file._id}/download`}
+                        href={`${apiBase}/customers/${customer._id}/files/${file._id}/download`}
                         className="btn-link"
                       >
                         Download

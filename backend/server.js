@@ -15,16 +15,28 @@ app.set('trust proxy', 1)
 
 app.use(helmet())
 
-const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173')
-    .split(',')
-    .map((o) => o.trim())
+const defaultOrigins = [
+    'http://localhost:5173',
+    'https://crm-app-frontend-pz1ru.ondigitalocean.app',
+]
+
+const envOrigins = [process.env.FRONTEND_URL, process.env.CORS_ORIGIN]
     .filter(Boolean)
+    .flatMap((val) => val.split(','))
+    .map((o) => o.trim().replace(/\/$/, ''))
+    .filter(Boolean)
+
+const allowedOrigins = Array.from(new Set([...defaultOrigins, ...envOrigins]))
 
 app.use(
     cors({
         origin: (origin, cb) => {
-            if (!origin || allowedOrigins.includes(origin)) return cb(null, true)
-            return cb(new Error('Origin not allowed by CORS'))
+            if (!origin) return cb(null, true)
+            const cleanOrigin = origin.replace(/\/$/, '')
+            if (allowedOrigins.includes(cleanOrigin)) {
+                return cb(null, true)
+            }
+            return cb(null, false)
         },
         credentials: true,
     })

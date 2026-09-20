@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Admin Bootstrap Seeder
  * ======================
  * Creates the initial Admin user from environment variables.
@@ -49,15 +49,16 @@ const run = async () => {
         await mongoose.connect(MONGO_URI)
         console.log('MongoDB connected.')
 
-        const existing = await User.findOne({email: ADMIN_EMAIL.toLowerCase()})
+        const cleanEmail = ADMIN_EMAIL.trim().toLowerCase()
+        const existing = await User.findOne({email: cleanEmail})
         if (existing) {
-            console.log(`Admin account already exists for ${ADMIN_EMAIL}. No changes made.`)
+            console.log(`Admin account already exists for ${cleanEmail}. No changes made.`)
             return
         }
 
         const admin = await User.create({
             fullName: ADMIN_FULLNAME.trim(),
-            email: ADMIN_EMAIL.toLowerCase().trim(),
+            email: cleanEmail,
             password: ADMIN_PASSWORD,
             companyName: ADMIN_COMPANY.trim(),
             role: 'Admin',

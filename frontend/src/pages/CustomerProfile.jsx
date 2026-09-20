@@ -27,8 +27,9 @@ import { generateWhatsAppUrl } from "../lib/phoneUtils";
 const ProfileLogo = ({ companyLogo, companyName }) => {
   const [imgError, setImgError] = useState(false);
 
+  const backendRoot = (import.meta.env.VITE_API_URL || 'http://localhost:5001/api').replace(/\/api\/?$/, '');
   const imageUrl = companyLogo
-    ? `${import.meta.env.VITE_API_URL || "http://localhost:5001"}${companyLogo}`
+    ? (companyLogo.startsWith('http') ? companyLogo : `${backendRoot}${companyLogo.startsWith('/') ? '' : '/'}${companyLogo}`)
     : null;
 
   if (imageUrl && !imgError) {
@@ -44,11 +45,11 @@ const ProfileLogo = ({ companyLogo, companyName }) => {
 
   const initials = companyName
     ? companyName
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .slice(0, 2)
-        .toUpperCase()
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase()
     : null;
 
   return initials ? (
@@ -371,7 +372,7 @@ function CustomerProfile() {
       console.error("Status:", err.response?.status);
       alert(
         err.response?.data?.message ||
-          "Server error: Could not save interaction."
+        "Server error: Could not save interaction."
       );
     }
   };
@@ -945,7 +946,7 @@ function CustomerProfile() {
 
                       <div className="file-actions">
                         <a
-                          href={`${import.meta.env.VITE_API_URL || "http://localhost:5001"}/api/customers/${customer._id}/files/${doc._id}/download`}
+                          href={`${(import.meta.env.VITE_API_URL || "http://localhost:5001/api").replace(/\/$/, "")}/customers/${customer._id}/files/${doc._id}/download`}
                           className="download-btn"
                         >
                           Download

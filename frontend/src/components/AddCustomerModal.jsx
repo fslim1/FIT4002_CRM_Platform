@@ -14,7 +14,7 @@ const AddCustomerModal = ({ onClose, onAdd, initialData = null }) => {
     const [logoFile, setLogoFile] = useState(null);
     const [previewUrl, setPreviewUrl] = useState(() =>
         initialData?.companyLogo
-            ? `${import.meta.env.VITE_API_URL || 'http://localhost:5001'}${initialData.companyLogo}`
+            ? `${(import.meta.env.VITE_API_URL || 'http://localhost:5001/api').replace(/\/api\/?$/, '')}${initialData.companyLogo.startsWith('/') ? '' : '/'}${initialData.companyLogo}`
             : null
     );
     const [loading, setLoading] = useState(false);

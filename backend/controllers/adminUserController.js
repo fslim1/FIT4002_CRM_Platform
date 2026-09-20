@@ -20,7 +20,7 @@ const isSameCompany = (a, b) =>
     (b.companyName || '').trim().toLowerCase()
 
 const isValidEmail = (email) =>
-    typeof email === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
+    typeof email === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim())
 
 // Roles that Admins are permitted to create via user management.
 // Admins cannot create another Admin through this UI endpoint.
@@ -100,7 +100,9 @@ exports.createUser = async (req, res) => {
             })
         }
 
-        const existing = await User.findOne({email: email.toLowerCase().trim()})
+        const normalizedEmail = email.trim().toLowerCase()
+
+        const existing = await User.findOne({email: normalizedEmail})
         if (existing) {
             return res
                 .status(409)
@@ -128,7 +130,7 @@ exports.createUser = async (req, res) => {
         // Password is hashed by the User model pre-save hook
         const newUser = await User.create({
             fullName: fullName.trim(),
-            email: email.toLowerCase().trim(),
+            email: normalizedEmail,
             password,
             companyName,
             role,
