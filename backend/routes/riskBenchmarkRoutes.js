@@ -16,6 +16,17 @@ const serialize = (b) => ({
     updatedAt: b.updatedAt,
 })
 
+// H6 AC1: healthy < warning < highRisk must hold, or the three tiers make no sense.
+const validateOrdering = (healthyMaxDays, warningMaxDays, highRiskMinDays) => {
+    if (healthyMaxDays >= warningMaxDays) {
+        return 'healthyMaxDays must be less than warningMaxDays'
+    }
+    if (warningMaxDays >= highRiskMinDays) {
+        return 'warningMaxDays must be less than highRiskMinDays'
+    }
+    return null
+}
+
 // GET /api/risk-benchmarks — every benchmark belonging to the requester's company.
 // Any authenticated user can read (per the client's visibility rules — everyone
 // can see the reasoning behind their own deal's risk score); only Admin can write.
@@ -43,6 +54,9 @@ router.post('/', requireAuth, requireRole('Admin'), async (req, res) => {
                 .status(400)
                 .json({message: 'healthyMaxDays, warningMaxDays and highRiskMinDays must be non-negative numbers'})
         }
+
+        const orderingError = validateOrdering(healthyMaxDays, warningMaxDays, highRiskMinDays)
+        if (orderingError) return res.status(400).json({message: orderingError})
 
         const companyKey = getCompanyKey(req.user)
         const dealTypeValue = (dealType || 'Standard').trim()
@@ -85,13 +99,25 @@ router.patch('/:id', requireAuth, requireRole('Admin'), async (req, res) => {
         if (!benchmark) return res.status(404).json({message: 'Benchmark not found'})
 
         const {healthyMaxDays, warningMaxDays, highRiskMinDays} = req.body || {}
+        const next = {
+            healthyMaxDays: healthyMaxDays ?? benchmark.healthyMaxDays,
+            warningMaxDays: warningMaxDays ?? benchmark.warningMaxDays,
+            highRiskMinDays: highRiskMinDays ?? benchmark.highRiskMinDays,
+        }
+
         for (const [key, value] of Object.entries({healthyMaxDays, warningMaxDays, highRiskMinDays})) {
             if (value === undefined) continue
             if (typeof value !== 'number' || value < 0) {
                 return res.status(400).json({message: `${key} must be a non-negative number`})
             }
-            benchmark[key] = value
         }
+
+        const orderingError = validateOrdering(next.healthyMaxDays, next.warningMaxDays, next.highRiskMinDays)
+        if (orderingError) return res.status(400).json({message: orderingError})
+
+        benchmark.healthyMaxDays = next.healthyMaxDays
+        benchmark.warningMaxDays = next.warningMaxDays
+        benchmark.highRiskMinDays = next.highRiskMinDays
 
         await benchmark.save()
         return res.json({benchmark: serialize(benchmark)})

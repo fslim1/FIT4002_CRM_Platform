@@ -3,6 +3,7 @@ const {signToken} = require('../middleware/auth')
 const {verifyIdToken, verifyAccessToken} = require('../services/googleAuth')
 const {verifyEmailExists} = require('../services/emailVerification')
 const {validatePassword} = require('../services/passwordPolicy')
+const {seedCompanyRiskBenchmarksIfNew} = require('../services/seedCompanyDefaults')
 const {
     isConfirmationRequired,
     isValidCodeFormat,
@@ -79,6 +80,10 @@ exports.signup = async (req, res) => {
             gmailAccessToken: gmailAccessToken || null,
             isGmailLinked: Boolean(gmailAccessToken),
         })
+
+        // H6 AC2: default benchmarks exist the moment a new company appears,
+        // so scoring never starts from an empty configuration.
+        await seedCompanyRiskBenchmarksIfNew(user.companyName)
 
         // Without a confirmation step the account is usable straight away.
         if (!confirmationRequired) {
@@ -280,10 +285,11 @@ exports.googleLogin = async (req, res) => {
             }
             await user.save()
         } else {
+            const companyName = companyFromEmail(profile.email)
             user = await User.create({
                 fullName: profile.fullName,
                 email: profile.email,
-                companyName: companyFromEmail(profile.email),
+                companyName,
                 role: 'User',
                 emailVerified: true,
                 authProvider: 'google',
@@ -291,6 +297,9 @@ exports.googleLogin = async (req, res) => {
                 gmailAccessToken: gmailAccessToken || null,
                 isGmailLinked: Boolean(gmailAccessToken),
             })
+
+            // H6 AC2: same default-seeding on Google's new-company path.
+            await seedCompanyRiskBenchmarksIfNew(companyName)
         }
 
         const token = signToken(user._id)
