@@ -9,6 +9,10 @@
   cursor: pointer;
 }
 
+.deal-card:hover {
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12);
+}
+
 .deal-days-badge {
   position: absolute;
   top: 0;
@@ -60,6 +64,7 @@
   justify-content: space-between;
   align-items: center;
   margin-bottom: 8px;
+  gap: 8px;
 }
 
 .deal-company {
@@ -69,12 +74,35 @@
   color: #6e6e6e;
 }
 
+.deal-badges {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
 .deal-priority-badge {
   font-family: "Inter", sans-serif;
-  font-weight: 400;
-  font-size: 8px;
-  padding: 2px 6px;
-  border-radius: 30px;
+  font-weight: 600;
+  font-size: 9px;
+  padding: 2px 7px;
+  border-radius: 12px;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.deal-risk-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  font-family: "Inter", sans-serif;
+  font-weight: 800;
+  font-size: 9px;
+  line-height: 1;
+  flex-shrink: 0;
+  box-sizing: border-box;
 }
 
 .deal-prob-row {
@@ -120,4 +148,30 @@
   color: #555555;
   text-align: center;
   padding: 2px 0;
+}
+
+.deal-footer-row {
+  display: flex;
+  align-items: center;
+  justify-content: right;
+  padding: 4px 10px 6px 10px;
+}
+
+.deal-risk-indicator {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-family: "Inter", sans-serif;
+  font-size: 9px;
+  font-weight: 600;
+  cursor: default;
+}
+
+.deal-risk-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
 }

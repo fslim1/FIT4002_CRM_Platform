@@ -22,11 +22,71 @@ const INITIAL_FORM = {
     assignee: "", customer: ""
 };
 
+const SHOW_MOCK_DEALS = true;
+
+const MOCK_DEALS = [
+    {
+        _id: 'mock-1',
+        name: 'TranXenergy Solar Expansion',
+        company: 'TranXenergy',
+        price: 185000,
+        priority: 'High',
+        probability: 72,
+        stage: 'Negotiation',
+        daysAgo: 12,
+        riskLevel: 'High',
+    },
+    {
+        _id: 'mock-2',
+        name: 'Battery Storage Pilot',
+        company: 'GreenVolt',
+        price: 96000,
+        priority: 'Medium',
+        probability: 54,
+        stage: 'Proposal Made',
+        daysAgo: 8,
+        riskLevel: 'Medium',
+    },
+    {
+        _id: 'mock-3',
+        name: 'Fleet Electrification Upgrade',
+        company: 'Metro Transit',
+        price: 240000,
+        priority: 'High',
+        probability: 68,
+        stage: 'Demo Scheduled',
+        daysAgo: 4,
+        riskLevel: 'Low',
+    },
+    {
+        _id: 'mock-4',
+        name: 'Commercial EV Charging Rollout',
+        company: 'Northline Logistics',
+        price: 135000,
+        priority: 'Low',
+        probability: 41,
+        stage: 'Contact Made',
+        daysAgo: 16,
+        riskLevel: 'Medium',
+    },
+    {
+        _id: 'mock-5',
+        name: 'Grid Resilience Quote',
+        company: 'Summit Utilities',
+        price: 205000,
+        priority: 'Medium',
+        probability: 35,
+        stage: 'Qualified',
+        daysAgo: 21,
+        riskLevel: 'High',
+    },
+];
+
 function SalesPipeline() {
     const {user} = useAuth();
     // The delete option shows for Admins or people granted Delete Records
     const canDeleteRecords = can(user, 'deleteRecords');
-    const [deals, setDeals] = useState([]);
+    const [deals, setDeals] = useState(SHOW_MOCK_DEALS ? MOCK_DEALS : []);
     const [showModal, setShowModal] = useState(false);
     const [form, setForm] = useState(INITIAL_FORM);
     const [loading, setLoading] = useState(true);
@@ -75,6 +135,13 @@ useEffect(() => {
 
 // Load deals whenever filters change
 useEffect(() => {
+    if (SHOW_MOCK_DEALS) {
+        setDeals(MOCK_DEALS);
+        setError('Mock deal data is enabled for UI testing.');
+        setLoading(false);
+        return;
+    }
+
     setLoading(true);
     const params = {};
     if (userFilter) params.userId = userFilter;
@@ -82,7 +149,8 @@ useEffect(() => {
 
     getDeals(params)
         .then(data => {
-            setDeals(data);
+            //setDeals(data);
+            setDeals(Array.isArray(data) ? data : []);
             setLoading(false);
         })
         .catch(err => {
