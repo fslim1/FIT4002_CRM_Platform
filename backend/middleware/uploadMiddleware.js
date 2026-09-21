@@ -47,7 +47,7 @@ function checkDocumentType(file, cb) {
   const filetypes = /jpeg|jpg|png|gif|webp|pdf|doc|docx|txt|csv/;
   const mimetypes = /jpeg|jpg|png|gif|webp|pdf|msword|wordprocessingml|text\/plain|text\/csv/;
 
-  const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
+    const extname = filetypes.test(path.extname(file.originalname).toLowerCase());
   const mimetype = mimetypes.test(file.mimetype.toLowerCase());
 
   if (mimetype && extname) {

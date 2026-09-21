@@ -69,9 +69,9 @@ const getVisibleCustomerFilter = async (user) => {
             tIds.push(user.team);
         }
     }
-    
+
     if (user.role === 'Supervisor') {
-        const supervised = await Team.find({ supervisor: user._id }).select('_id');
+        const supervised = await Team.find({supervisor: user._id}).select('_id');
         supervised.forEach(t => {
             if (!tIds.some(id => String(id) === String(t._id))) tIds.push(t._id);
         });
@@ -99,7 +99,7 @@ const canViewCustomer = async (user, customer) => {
     if (user.role === 'Supervisor') {
         let tIds = [];
         if (user.team) tIds.push(user.team);
-        const supervised = await Team.find({ supervisor: user._id }).select('_id');
+        const supervised = await Team.find({supervisor: user._id}).select('_id');
         supervised.forEach(t => {
             if (!tIds.some(id => String(id) === String(t._id))) tIds.push(t._id);
         });
@@ -117,7 +117,7 @@ const getTeamMemberIds = async (user) => {
     let tIds = [];
     if (user.team) tIds.push(user.team);
     if (user.role === 'Supervisor') {
-        const supervised = await Team.find({ supervisor: user._id }).select('_id');
+        const supervised = await Team.find({supervisor: user._id}).select('_id');
         supervised.forEach(t => {
             if (!tIds.some(id => String(id) === String(t._id))) tIds.push(t._id);
         });
@@ -145,7 +145,7 @@ const getVisibleDealFilter = async (user) => {
 
 const canAccessDeal = async (user, deal) => {
     if (!deal.createdBy) return false
-    
+
     if (seesEverything(user)) {
         const ids = await getCompanyUserIds(user);
         return ids.some((id) => String(id) === String(deal.createdBy._id || deal.createdBy));
@@ -154,7 +154,7 @@ const canAccessDeal = async (user, deal) => {
         const ids = await getTeamMemberIds(user);
         return ids.some((id) => String(id) === String(deal.createdBy._id || deal.createdBy));
     }
-    
+
     return String(user._id) === String(deal.createdBy._id || deal.createdBy);
 }
 

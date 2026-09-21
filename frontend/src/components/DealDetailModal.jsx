@@ -68,7 +68,7 @@ function DealDetailModal({deal, onClose, onDealUpdate}) {
                     setCustomer(res.data);
                     setCustomerError(null);
                 }
-            } catch (err) {
+            } catch {
                 if (!cancelled) setCustomerError("Customer profile not found");
             } finally {
                 if (!cancelled) setCustomerLoading(false);

@@ -1,7 +1,7 @@
-import { useEffect, useState } from 'react';
-import { FiLock, FiShare2, FiUsers } from 'react-icons/fi';
-import { fetchMyTeam } from '../api/teams';
-import { useAuth } from '@/context/auth';
+import {useEffect, useState} from 'react';
+import {FiLock, FiShare2, FiUsers} from 'react-icons/fi';
+import {fetchMyTeam} from '../api/teams';
+import {useAuth} from '@/context/auth';
 import '../styles/MyTeam.css';
 import '../styles/AdminSettings.css';
 
@@ -124,7 +124,7 @@ function MyTeam() {
                     <div className="myteam-card">
                         <span className="myteam-card-label">Customer Sharing</span>
                         <span className={`myteam-sharing-pill ${sharingOn ? 'on' : 'off'}`}>
-            {sharingOn ? <FiShare2 /> : <FiLock />}
+            {sharingOn ? <FiShare2/> : <FiLock/>}
                             {sharingOn ? 'Sharing Active' : 'Sharing Off'}
           </span>
                         <p className="myteam-card-note">

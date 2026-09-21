@@ -1,67 +1,67 @@
 const mongoose = require('mongoose')
- 
+
 const taskSchema = new mongoose.Schema({
- 
-  title: {
+
+    title: {
     type: String,
     required: true
   },
- 
-  company: {
+
+    company: {
     type: String,
     default: ''
   },
- 
-  priority: {
+
+    priority: {
     type: String,
     enum: ['High', 'Medium', 'Low'],
     default: 'Medium'
   },
- 
-  status: {
+
+    status: {
     type: String,
     enum: ['todo', 'inprogress', 'completed'],
     default: 'todo'
   },
- 
-  dueDate: {
+
+    dueDate: {
     type: Date
   },
- 
+
     assignedTo: [
     {
         type: mongoose.Schema.Types.ObjectId,
         ref: 'User'
     }
     ],
- 
+
     createdBy: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
         required: true
     },
- 
+
     description: {
     type: String,
     default: ''
   },
- 
-  customer: {
+
+    customer: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Customer'
   },
- 
-  deal: {
+
+    deal: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'Deal'
   },
- 
- 
+
+
     collaborative: {
         type: Boolean,
         default: false
     },
- 
+
     // Timestamp of the last time this task was successfully pushed to UAP.
     // null means it has never synced (new task, or every sync attempt has failed).
     // Used by the daily sweep job to find tasks that need to be resent.
@@ -69,8 +69,8 @@ const taskSchema = new mongoose.Schema({
         type: Date,
         default: null
     }
- 
- 
+
+
 }, { timestamps: true })
- 
+
 module.exports = mongoose.model('Task', taskSchema)

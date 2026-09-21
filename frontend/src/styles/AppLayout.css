@@ -16,8 +16,8 @@
 }
 
 .app-sidebar {
-  width: 200px;
-  min-width: 200px;
+    width: 200px;
+    min-width: 200px;
     transition: width .3s ease;
     position: relative;
 }
@@ -41,7 +41,7 @@
     background: rgba(255, 255, 255, .15);
     color: white;
 
-  display: flex;
+    display: flex;
     justify-content: center;
     align-items: center;
 

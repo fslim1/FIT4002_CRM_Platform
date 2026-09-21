@@ -1,12 +1,12 @@
-import {useState, useEffect} from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
-import api from '../api/client';
-import { useAuth } from '@/context/auth';
-import {can} from '@/lib/permissions';
-import '../styles/CustomerProfile.css';
-import '../styles/InteractionSidePanel.css'
-import AddCustomerModal from '../components/AddCustomerModal';
-import EmailComposer from '../components/EmailComposer.jsx';
+import {useState, useEffect, useCallback} from "react";
+import {useParams, Link, useNavigate} from "react-router-dom";
+import api from "../api/client";
+import {useAuth} from "@/context/auth";
+import {can} from "@/lib/permissions";
+import "../styles/CustomerProfile.css";
+import "../styles/InteractionSidePanel.css";
+import AddCustomerModal from "../components/AddCustomerModal";
+import EmailComposer from "../components/EmailComposer.jsx";
 import {
     FiArrowRight,
     FiEdit2,
@@ -22,7 +22,7 @@ import {
     FiTrash2
 } from "react-icons/fi";
 import {FaWhatsapp} from "react-icons/fa";
-import {generateWhatsAppUrl} from '../lib/phoneUtils';
+import {generateWhatsAppUrl} from "../lib/phoneUtils";
 
 const ProfileLogo = ({companyLogo, companyName}) => {
     const [imgError, setImgError] = useState(false);
@@ -36,7 +36,7 @@ const ProfileLogo = ({companyLogo, companyName}) => {
         return (
             <img
                 src={imageUrl}
-                alt={`${companyName || 'Company'} logo`}
+                alt={`${companyName || "Company"} logo`}
                 className="profile-logo"
                 onError={() => setImgError(true)}
             />
@@ -44,7 +44,12 @@ const ProfileLogo = ({companyLogo, companyName}) => {
     }
 
     const initials = companyName
-        ? companyName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase()
+        ? companyName
+            .split(" ")
+            .map((n) => n[0])
+            .join("")
+            .slice(0, 2)
+            .toUpperCase()
         : null;
 
     return initials ? (
@@ -60,8 +65,8 @@ function CustomerProfile() {
     const {user} = useAuth();
     // Delete options render only for Admins or people granted the matching
     // permission in Settings -> Permissions
-    const canDeleteCustomer = can(user, 'deleteCustomers');
-    const canDeleteRecords = can(user, 'deleteRecords');
+    const canDeleteCustomer = can(user, "deleteCustomers");
+    const canDeleteRecords = can(user, "deleteRecords");
     const [customer, setCustomer] = useState(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -69,7 +74,7 @@ function CustomerProfile() {
     const [uploadError, setUploadError] = useState(null);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     // State to track active tab
-    const [activeTab, setActiveTab] = useState('Interactions');
+    const [activeTab, setActiveTab] = useState("Interactions");
     const [searchQuery, setSearchQuery] = useState("");
 
     // State for the Detail Modal
@@ -80,7 +85,10 @@ function CustomerProfile() {
     const [isComposingEmail, setIsComposingEmail] = useState(false);
     // State for the Log Interaction Modal
     const [isLoggingModalOpen, setIsLoggingModalOpen] = useState(false);
-    const [newInteractionData, setNewInteractionData] = useState({type: 'Note', desc: ''});
+    const [newInteractionData, setNewInteractionData] = useState({
+        type: "Note",
+        desc: ""
+    });
 
     const [allInteractions, setAllInteractions] = useState([]);
     const [visibleCount, setVisibleCount] = useState(5);
@@ -94,7 +102,7 @@ function CustomerProfile() {
         desc: interaction.details || interaction.desc || "",
         author: interaction.author || "",
         createdAt: interaction.date || interaction.createdAt,
-        time: interaction.date || interaction.createdAt,
+        time: interaction.date || interaction.createdAt
     });
 
     const mapBackendAttachmentToMyUI = (attachment) => ({
@@ -103,77 +111,80 @@ function CustomerProfile() {
         fileName: attachment.filename || attachment.fileName,
         filePath: attachment.path || attachment.filePath,
         fileSize: attachment.size || attachment.fileSize,
-        createdAt: attachment.uploadedAt || attachment.createdAt,
+        createdAt: attachment.uploadedAt || attachment.createdAt
     });
 
-    const fetchCustomer = async (showLoading = true) => {
-        try {
-            if (showLoading) setLoading(true);
+    const fetchCustomer = useCallback(
+        async (showLoading = true) => {
+            try {
+                if (showLoading) setLoading(true);
 
-            const res = await api.get(`/customers/${id}`);
+                const res = await api.get(`/customers/${id}`);
 
-            const customerData = res.data;
-            setCustomer(customerData);
+                const customerData = res.data;
+                setCustomer(customerData);
 
-            setAllInteractions(
-                (customerData.interactions || []).map(mapBackendInteractionToMyUI)
-                    .sort((a, b) => new Date(b.time) - new Date(a.time))
-            );
+                setAllInteractions(
+                    (customerData.interactions || [])
+                        .map(mapBackendInteractionToMyUI)
+                        .sort((a, b) => new Date(b.time) - new Date(a.time))
+                );
 
-            setDocuments(
-                (customerData.attachments || []).map(mapBackendAttachmentToMyUI)
-            );
+                setDocuments(
+                    (customerData.attachments || []).map(mapBackendAttachmentToMyUI)
+                );
 
-            setError(null);
-        } catch (err) {
-            console.error("Failed to fetch customer details:", err);
-            setError("Failed to fetch customer details.");
-        } finally {
-            if (showLoading) setLoading(false);
-        }
-    };
+                setError(null);
+            } catch (err) {
+                console.error("Failed to fetch customer details:", err);
+                setError("Failed to fetch customer details.");
+            } finally {
+                if (showLoading) setLoading(false);
+            }
+        },
+        [id]
+    );
 
     useEffect(() => {
         if (id) fetchCustomer();
-    }, [id]);
+    }, [id, fetchCustomer]);
 
     // Helper to dynamically match raw text types to frontend style elements
     const getStyleConfig = (type) => {
         switch (type) {
-            case 'Email':
+            case "Email":
                 return {
                     icon: <FiMail/>,
-                    className: 'icon-email',
-                    typeClass: 'type-email'
+                    className: "icon-email",
+                    typeClass: "type-email"
                 };
-            case 'Task':
+            case "Task":
                 return {
                     icon: <FiList/>,
-                    className: 'icon-task',
-                    typeClass: 'type-task'
+                    className: "icon-task",
+                    typeClass: "type-task"
                 };
-            case 'Call':
+            case "Call":
                 return {
                     icon: <FiPhone/>,
-                    className: 'icon-call',
-                    typeClass: 'type-call'
+                    className: "icon-call",
+                    typeClass: "type-call"
                 };
-            case 'Note':
+            case "Note":
                 return {
                     icon: <FiEdit3/>,
-                    className: 'icon-note',
-                    typeClass: 'type-note'
+                    className: "icon-note",
+                    typeClass: "type-note"
                 };
-            case 'Stage Change':
+            case "Stage Change":
             default:
                 return {
                     icon: <FiFolder/>,
-                    className: 'icon-stage',
-                    typeClass: 'type-stage'
+                    className: "icon-stage",
+                    typeClass: "type-stage"
                 };
         }
     };
-
 
     const handleCustomerUpdated = () => {
         fetchCustomer(false);
@@ -181,12 +192,16 @@ function CustomerProfile() {
 
     // Deleting a customer profile needs the Delete Customers permission
     const handleDeleteCustomer = async () => {
-        if (!window.confirm(`Permanently delete ${customer.fullName}'s profile? This cannot be undone.`)) {
+        if (
+            !window.confirm(
+                `Permanently delete ${customer.fullName}'s profile? This cannot be undone.`
+            )
+        ) {
             return;
         }
         try {
             await api.delete(`/customers/${id}`);
-            navigate('/customers');
+            navigate("/customers");
         } catch (err) {
             console.error("Failed to delete customer:", err);
             alert(err.response?.data?.message || "Failed to delete customer.");
@@ -196,12 +211,15 @@ function CustomerProfile() {
     // Logic to delete an interaction
     const handleDelete = async () => {
         if (window.confirm("Are you sure you want to delete this log?")) {
-
             try {
-                const res = await api.delete(`/customers/${id}/interactions/${selectedInteraction._id}`);
+                const res = await api.delete(
+                    `/customers/${id}/interactions/${selectedInteraction._id}`
+                );
                 if (res.data.status === "success") {
                     setAllInteractions((prev) =>
-                        prev.filter((interaction) => interaction._id !== selectedInteraction._id)
+                        prev.filter(
+                            (interaction) => interaction._id !== selectedInteraction._id
+                        )
                     );
                     setSelectedInteraction(null);
                 }
@@ -224,12 +242,14 @@ function CustomerProfile() {
 
     // 3. Save changes back to the main list
     const handleSave = async () => {
-
         try {
-            const res = await api.put(`/customers/${id}/interactions/${selectedInteraction._id}`, {
-                type: editedData.type,
-                desc: editedData.desc,
-            });
+            const res = await api.put(
+                `/customers/${id}/interactions/${selectedInteraction._id}`,
+                {
+                    type: editedData.type,
+                    desc: editedData.desc
+                }
+            );
 
             if (res.data.status === "success") {
                 setAllInteractions((prev) =>
@@ -245,7 +265,7 @@ function CustomerProfile() {
             console.error("Failed to update interaction:", err);
             alert("Failed to update interaction.");
         }
-    }
+    };
 
     const handleCancel = () => {
         setIsEditing(false);
@@ -253,17 +273,17 @@ function CustomerProfile() {
 
     // Logic for adding a new interaction
     const handleOpenLogModal = () => {
-        let defaultType = 'Note';
-        if (['Emails', 'Calls', 'Tasks', 'Notes'].includes(activeTab)) {
+        let defaultType = "Note";
+        if (["Emails", "Calls", "Tasks", "Notes"].includes(activeTab)) {
             const mapping = {
-                'Emails': 'Email',
-                'Calls': 'Call',
-                'Tasks': 'Task',
-                'Notes': 'Note'
+                "Emails": "Email",
+                "Calls": "Call",
+                "Tasks": "Task",
+                "Notes": "Note"
             };
             defaultType = mapping[activeTab];
         }
-        setNewInteractionData({type: defaultType, desc: ''});
+        setNewInteractionData({type: defaultType, desc: ""});
         setIsLoggingModalOpen(true);
     };
 
@@ -291,8 +311,8 @@ function CustomerProfile() {
 
             await api.post(`/customers/${id}/files`, formData, {
                 headers: {
-                    "Content-Type": "multipart/form-data",
-                },
+                    "Content-Type": "multipart/form-data"
+                }
             });
 
             await fetchCustomer(false);
@@ -325,7 +345,6 @@ function CustomerProfile() {
     };
 
     const handleSaveNewInteraction = async () => {
-
         const payload = {
             type: newInteractionData.type || "Note",
             details: newInteractionData.desc,
@@ -341,12 +360,20 @@ function CustomerProfile() {
             await fetchCustomer(false);
 
             setIsLoggingModalOpen(false);
-            setNewInteractionData({type: 'Note', desc: '', priority: 'Medium', dueDate: ''});
+            setNewInteractionData({
+                type: "Note",
+                desc: "",
+                priority: "Medium",
+                dueDate: ""
+            });
         } catch (err) {
             console.error("Failed to save new manual interaction to database:", err);
             console.error("Backend response:", err.response?.data);
             console.error("Status:", err.response?.status);
-            alert(err.response?.data?.message || "Server error: Could not save interaction.");
+            alert(
+                err.response?.data?.message ||
+                "Server error: Could not save interaction."
+            );
         }
     };
 
@@ -374,7 +401,7 @@ function CustomerProfile() {
         try {
             await api.post(`/customers/${id}/interactions`, {
                 type: "Call",
-                details: "WhatsApp opened for customer call",
+                details: "WhatsApp opened for customer call"
             });
             fetchCustomer(false);
         } catch (err) {
@@ -386,16 +413,24 @@ function CustomerProfile() {
         const date = new Date(dateString);
         const now = new Date();
 
-        const time = date.toLocaleTimeString([], {
-            hour: "numeric",
-            minute: "2-digit",
-            hour12: true,
-        }).toLowerCase();
+        const time = date
+            .toLocaleTimeString([], {
+                hour: "numeric",
+                minute: "2-digit",
+                hour12: true
+            })
+            .toLowerCase();
 
         const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-        const interactionDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+        const interactionDate = new Date(
+            date.getFullYear(),
+            date.getMonth(),
+            date.getDate()
+        );
 
-        const diffDays = Math.floor((today - interactionDate) / (1000 * 60 * 60 * 24));
+        const diffDays = Math.floor(
+            (today - interactionDate) / (1000 * 60 * 60 * 24)
+        );
 
         if (diffDays === 0) {
             return `Today ${time}`;
@@ -412,10 +447,10 @@ function CustomerProfile() {
     const filteredInteractions = allInteractions.filter((item) => {
         // Map plural tab names to singular types
         const tabMapping = {
-            'Emails': 'Email',
-            'Calls': 'Call',
-            'Tasks': 'Task',
-            'Notes': 'Note'
+            "Emails": "Email",
+            "Calls": "Call",
+            "Tasks": "Task",
+            "Notes": "Note"
         };
 
         const matchesTab =
@@ -437,23 +472,24 @@ function CustomerProfile() {
     const hasMoreInteractions = visibleCount < filteredInteractions.length;
 
     // Calculate dynamic stats
-    const emailCount = allInteractions.filter(i => i.type === 'Email').length;
-    const callCount = allInteractions.filter(i => i.type === 'Call').length;
-    const taskCount = allInteractions.filter(i => i.type === 'Task').length;
+    const emailCount = allInteractions.filter((i) => i.type === "Email").length;
+    const callCount = allInteractions.filter((i) => i.type === "Call").length;
+    const taskCount = allInteractions.filter((i) => i.type === "Task").length;
 
     const totalInteractions = allInteractions.length;
-    let engagementLevel = 'Low';
-    let engagementClass = 'engagement-low';
+    let engagementLevel = "Low";
+    let engagementClass = "engagement-low";
     if (totalInteractions >= 5) {
-        engagementLevel = 'High';
-        engagementClass = 'engagement-high';
+        engagementLevel = "High";
+        engagementClass = "engagement-high";
     } else if (totalInteractions >= 3) {
-        engagementLevel = 'Medium';
-        engagementClass = 'engagement-medium';
+        engagementLevel = "Medium";
+        engagementClass = "engagement-medium";
     }
 
     // Ensure recentInteractionTime is based on the first element (most recent)
-    const recentInteractionTime = allInteractions.length > 0 ? allInteractions[0].time : 'No recent activity';
+    const recentInteractionTime =
+        allInteractions.length > 0 ? allInteractions[0].time : "No recent activity";
 
     if (loading) return <div className="loading-msg">Loading...</div>;
     if (error) return <div className="error-msg">{error}</div>;
@@ -463,19 +499,23 @@ function CustomerProfile() {
         <div className="customer-detail-page">
             <div className="customer-detail-header">
                 <div>
-                    <Link to="/customers" className="back-link">← Back to Customers</Link>
+                    <Link to="/customers" className="back-link">
+                        ← Back to Customers
+                    </Link>
                     <h1>Customer Profile</h1>
                 </div>
             </div>
 
             <div className="customer-profile-container">
-
                 {/* LEFT COLUMN */}
                 <div className="left-column">
                     {/* Profile Card */}
                     <div className="profile-card">
-                        <ProfileLogo key={customer.companyLogo || ''} companyLogo={customer.companyLogo}
-                                     companyName={customer.company}/>
+                        <ProfileLogo
+                            key={customer.companyLogo || ""}
+                            companyLogo={customer.companyLogo}
+                            companyName={customer.company}
+                        />
                         <h2 className="profile-name">{customer.fullName}</h2>
                         <p className="profile-subtitle">
                             {customer.designation} ·<br/>
@@ -507,11 +547,17 @@ function CustomerProfile() {
 
                             <div className="info-group">
                                 <span className="info-label">Created</span>
-                                <span className="info-value">{new Date(customer.createdAt).toLocaleDateString()}</span>
+                                <span className="info-value">
+                  {new Date(customer.createdAt).toLocaleDateString()}
+                </span>
                             </div>
 
                             <div className="profile-actions">
-                                <button className="add-contact-btn" onClick={() => setIsComposingEmail(true)}>✉️ Email
+                                <button
+                                    className="add-contact-btn"
+                                    onClick={() => setIsComposingEmail(true)}
+                                >
+                                    ✉️ Email
                                 </button>
                                 <button
                                     className="add-contact-btn call-btn"
@@ -534,9 +580,14 @@ function CustomerProfile() {
                             <div className="deal-info">
                                 <span className="deal-title">Solar grid expansion</span>
                                 <span className="deal-amount">$48,000</span>
-                                <span className="deal-status status-proposal">Proposal Made</span>
+                                <span className="deal-status status-proposal">
+                  Proposal Made
+                </span>
                             </div>
-                            <button className="deal-arrow-btn" aria-label="View solar grid expansion deal">
+                            <button
+                                className="deal-arrow-btn"
+                                aria-label="View solar grid expansion deal"
+                            >
                                 <FiArrowRight/>
                             </button>
                         </div>
@@ -547,7 +598,10 @@ function CustomerProfile() {
                                 <span className="deal-amount">$12,000</span>
                                 <span className="deal-status status-won">Won</span>
                             </div>
-                            <button className="deal-arrow-btn" aria-label="View EV charging pilot deal">
+                            <button
+                                className="deal-arrow-btn"
+                                aria-label="View EV charging pilot deal"
+                            >
                                 <FiArrowRight/>
                             </button>
                         </div>
@@ -578,12 +632,15 @@ function CustomerProfile() {
                             <div className="engagement-insights">
                                 <div className="insight-row">
                                     <span className="insight-label">Engagement:</span>
-                                    <span className={`insight-badge ${engagementClass}`}>{engagementLevel}</span>
+                                    <span className={`insight-badge ${engagementClass}`}>
+                    {engagementLevel}
+                  </span>
                                 </div>
                                 <div className="insight-row">
                                     <span className="insight-label">Last Active:</span>
-                                    <span
-                                        className="insight-value">{formatInteractionTime(recentInteractionTime)}</span>
+                                    <span className="insight-value">
+                    {formatInteractionTime(recentInteractionTime)}
+                  </span>
                                 </div>
                             </div>
                         </div>
@@ -598,7 +655,10 @@ function CustomerProfile() {
                                 />
                                 <FiSearch className="search-icon"/>
                             </div>
-                            <button className="edit-profile-btn" onClick={() => setIsEditModalOpen(true)}>
+                            <button
+                                className="edit-profile-btn"
+                                onClick={() => setIsEditModalOpen(true)}
+                            >
                                 <FiEdit2 className="edit-icon"/>
                                 Edit Profile
                             </button>
@@ -617,69 +677,86 @@ function CustomerProfile() {
 
                     {/* Tabs */}
                     <div className="tabs-container">
-                        {['Interactions', 'Emails', 'Calls', 'Tasks', 'Files', 'Notes'].map((name) => (
-                            <button
-                                key={name}
-                                className={`tab ${activeTab === name ? 'active-tab' : ''}`}
-                                onClick={() => {
-                                    setActiveTab(name)
-                                    setSelectedInteraction(null);
-                                    setIsEditing(false);
-                                }}
-                            >
-                                {name}
-                            </button>
-                        ))}
+                        {["Interactions", "Emails", "Calls", "Tasks", "Files", "Notes"].map(
+                            (name) => (
+                                <button
+                                    key={name}
+                                    className={`tab ${activeTab === name ? "active-tab" : ""}`}
+                                    onClick={() => {
+                                        setActiveTab(name);
+                                        setSelectedInteraction(null);
+                                        setIsEditing(false);
+                                    }}
+                                >
+                                    {name}
+                                </button>
+                            )
+                        )}
                     </div>
 
                     {/* Interactions List */}
-                    {activeTab !== 'Files' && (
+                    {activeTab !== "Files" && (
                         <div className="interactions-card">
                             <div className="interactions-header">
-                                <h3>{activeTab === 'Interactions' ? 'All Interactions' : activeTab}</h3>
+                                <h3>
+                                    {activeTab === "Interactions"
+                                        ? "All Interactions"
+                                        : activeTab}
+                                </h3>
                                 <div className="interaction-action-btns">
-                                    {activeTab !== 'Notes' && (
-                                        <button className="log-interaction-btn"
-                                                onClick={() => setIsComposingEmail(true)}>
+                                    {activeTab !== "Notes" && (
+                                        <button
+                                            className="log-interaction-btn"
+                                            onClick={() => setIsComposingEmail(true)}
+                                        >
                                             <FiMail/> Send Email
                                         </button>
                                     )}
-                                    <button className="log-interaction-btn" onClick={handleOpenLogModal}>+ Log
-                                        Interaction
+                                    <button
+                                        className="log-interaction-btn"
+                                        onClick={handleOpenLogModal}
+                                    >
+                                        + Log Interaction
                                     </button>
                                 </div>
                             </div>
 
                             <div className="interactions-content-layout">
-
                                 <div className="interactions-list">
                                     {visibleInteractions.map((item) => {
-
                                         const config = getStyleConfig(item.type);
 
                                         const itemId = item._id || item.id;
 
                                         return (
                                             <div
-                                                className={`interaction-item clickable ${selectedInteraction?.id === itemId ? 'active-item' : ''}`}
+                                                className={`interaction-item clickable ${selectedInteraction?.id === itemId ? "active-item" : ""}`}
                                                 key={item.id}
                                                 onClick={() => setSelectedInteraction(item)} // 4. CLICK TO OPEN MODAL
                                             >
                                                 {/* Uses the generated icon background wrapper style */}
-                                                <div className={`interaction-icon-wrapper ${config.className}`}>
+                                                <div
+                                                    className={`interaction-icon-wrapper ${config.className}`}
+                                                >
                                                     {config.icon}
                                                 </div>
 
                                                 <div className="interaction-content">
                                                     <div className="interaction-meta">
-                                                        <span
-                                                            className={`interaction-type ${config.typeClass}`}>{item.type}</span>
-                                                        <span className="interaction-author">by {item.author}</span>
+                            <span
+                                className={`interaction-type ${config.typeClass}`}
+                            >
+                              {item.type}
+                            </span>
+                                                        <span className="interaction-author">
+                              by {item.author}
+                            </span>
                                                     </div>
                                                     <p className="interaction-desc">{item.desc}</p>
                                                 </div>
-                                                <div
-                                                    className="interaction-time">{formatInteractionTime(item.time)}</div>
+                                                <div className="interaction-time">
+                                                    {formatInteractionTime(item.time)}
+                                                </div>
                                             </div>
                                         );
                                     })}
@@ -699,86 +776,115 @@ function CustomerProfile() {
                                         customerId={customer?._id || customer?.id || id}
                                         onClose={() => setIsComposingEmail(false)}
                                         onEmailSent={async () => {
-                                          try {
-                                              await fetchCustomer(false);
-                                          } catch (err) {
-                                              console.error("Failed to refresh customer data:", err);
-                                          } finally {
-                                              setIsComposingEmail(false);
-                                          }
-                                      }}
+                                            try {
+                                                await fetchCustomer(false);
+                                            } catch (err) {
+                                                console.error("Failed to refresh customer data:", err);
+                                            } finally {
+                                                setIsComposingEmail(false);
+                                            }
+                                        }}
                                     />
-                                ) : selectedInteraction && (
-                                    <div className="side-panel">
-                                        <div className="side-panel-header">
-                                            <h4>{isEditing ? 'Edit Interaction' : 'Detail View'}</h4>
-                                            <button onClick={() => {
-                                                setSelectedInteraction(null);
-                                                setIsEditing(false);
-                                            }} className="close-btn"><FiX/></button>
-                                        </div>
-
-                                        <div className="side-panel-body">
-                                            <div className="side-panel-row">
-                                                <strong>Activity:</strong>
-                                                {isEditing ? (
-                                                    <select name="type" className="edit-select" value={editedData.type}
-                                                            onChange={handleInputChange}>
-                                                        <option value="Email">Email</option>
-                                                        <option value="Call">Call</option>
-                                                        <option value="Task">Task</option>
-                                                        <option value="Note">Note</option>
-                                                    </select>
-                                                ) : (
-                                                    <span>{selectedInteraction.type}</span>
-                                                )}
+                                ) : (
+                                    selectedInteraction && (
+                                        <div className="side-panel">
+                                            <div className="side-panel-header">
+                                                <h4>
+                                                    {isEditing ? "Edit Interaction" : "Detail View"}
+                                                </h4>
+                                                <button
+                                                    onClick={() => {
+                                                        setSelectedInteraction(null);
+                                                        setIsEditing(false);
+                                                    }}
+                                                    className="close-btn"
+                                                >
+                                                    <FiX/>
+                                                </button>
                                             </div>
 
-                                            <div className="side-panel-row">
-                                                <strong>Owner:</strong> <span>{selectedInteraction.author}</span>
-                                            </div>
-                                            <div className="side-panel-row">
-                                                <strong>Logged:</strong>
-                                                <span>{formatInteractionTime(selectedInteraction.time)}</span>
-                                            </div>
-                                            <div className="side-panel-notes">
-                                                <strong>Notes:</strong>
-                                                {isEditing ? (
-                                                    <textarea
-                                                        name="desc"
-                                                        value={editedData.desc}
-                                                        onChange={handleInputChange}
-                                                        className="edit-textarea"
-                                                    />
-                                                ) : (
-                                                    <p className="detail-notes-text">{selectedInteraction.desc}</p>
-                                                )}
-                                            </div>
-                                        </div>
-
-                                        <div className="side-panel-footer">
-                                            {isEditing ? (
-                                                <>
-                                                    <button className="cancel-btn" onClick={handleCancel}>Cancel
-                                                    </button>
-                                                    <button className="save-btn" onClick={handleSave}>Save Changes
-                                                    </button>
-                                                </>
-                                            ) : (
-                                                <>
-                                                    {/* Needs the Delete Records permission */}
-                                                    {canDeleteRecords && (
-                                                        <button className="delete-btn-action" onClick={handleDelete}>
-                                                            <FiTrash2/> Delete
-                                                        </button>
+                                            <div className="side-panel-body">
+                                                <div className="side-panel-row">
+                                                    <strong>Activity:</strong>
+                                                    {isEditing ? (
+                                                        <select
+                                                            name="type"
+                                                            className="edit-select"
+                                                            value={editedData.type}
+                                                            onChange={handleInputChange}
+                                                        >
+                                                            <option value="Email">Email</option>
+                                                            <option value="Call">Call</option>
+                                                            <option value="Task">Task</option>
+                                                            <option value="Note">Note</option>
+                                                        </select>
+                                                    ) : (
+                                                        <span>{selectedInteraction.type}</span>
                                                     )}
-                                                    <button className="edit-btn-action" onClick={handleEditClick}>
-                                                        <FiEdit2/> Edit
-                                                    </button>
-                                                </>
-                                            )}
+                                                </div>
+
+                                                <div className="side-panel-row">
+                                                    <strong>Owner:</strong>{" "}
+                                                    <span>{selectedInteraction.author}</span>
+                                                </div>
+                                                <div className="side-panel-row">
+                                                    <strong>Logged:</strong>
+                                                    <span>
+                            {formatInteractionTime(selectedInteraction.time)}
+                          </span>
+                                                </div>
+                                                <div className="side-panel-notes">
+                                                    <strong>Notes:</strong>
+                                                    {isEditing ? (
+                                                        <textarea
+                                                            name="desc"
+                                                            value={editedData.desc}
+                                                            onChange={handleInputChange}
+                                                            className="edit-textarea"
+                                                        />
+                                                    ) : (
+                                                        <p className="detail-notes-text">
+                                                            {selectedInteraction.desc}
+                                                        </p>
+                                                    )}
+                                                </div>
+                                            </div>
+
+                                            <div className="side-panel-footer">
+                                                {isEditing ? (
+                                                    <>
+                                                        <button
+                                                            className="cancel-btn"
+                                                            onClick={handleCancel}
+                                                        >
+                                                            Cancel
+                                                        </button>
+                                                        <button className="save-btn" onClick={handleSave}>
+                                                            Save Changes
+                                                        </button>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        {/* Needs the Delete Records permission */}
+                                                        {canDeleteRecords && (
+                                                            <button
+                                                                className="delete-btn-action"
+                                                                onClick={handleDelete}
+                                                            >
+                                                                <FiTrash2/> Delete
+                                                            </button>
+                                                        )}
+                                                        <button
+                                                            className="edit-btn-action"
+                                                            onClick={handleEditClick}
+                                                        >
+                                                            <FiEdit2/> Edit
+                                                        </button>
+                                                    </>
+                                                )}
+                                            </div>
                                         </div>
-                                    </div>
+                                    )
                                 )}
                             </div>
                             {filteredInteractions.length > 5 && (
@@ -798,18 +904,30 @@ function CustomerProfile() {
                         </div>
                     )}
 
-
                     {/* Files & Documents */}
-                    {!['Emails', 'Notes', 'Calls', 'Tasks'].includes(activeTab) && (
+                    {!["Emails", "Notes", "Calls", "Tasks"].includes(activeTab) && (
                         <div className="files-card">
                             <div className="files-header">
                                 <h3>Files & Documents</h3>
-                                <label className="upload-btn">
-                                <FiUpload />
-                                Upload
-                                <input type="file" hidden onChange={handleFileUpload} />
-                              </label>
+                                <label
+                                    className="upload-btn"
+                                    style={{
+                                        opacity: uploading ? 0.6 : 1,
+                                        pointerEvents: uploading ? "none" : "auto"
+                                    }}
+                                >
+                                    <FiUpload/>
+                                    {uploading ? "Uploading..." : "Upload"}
+                                    <input
+                                        type="file"
+                                        hidden
+                                        onChange={handleFileUpload}
+                                        disabled={uploading}
+                                    />
+                                </label>
                             </div>
+
+                            {uploadError && <p className="error-msg">{uploadError}</p>}
 
                             <div className="files-list">
                                 {documents.length === 0 ? (
@@ -821,9 +939,9 @@ function CustomerProfile() {
                                                 <span className="file-name">{doc.originalName}</span>
 
                                                 <span className="file-meta">
-                                                    Uploaded {formatInteractionTime(doc.createdAt)} -{" "}
+                          Uploaded {formatInteractionTime(doc.createdAt)} -{" "}
                                                     {(doc.fileSize / 1024 / 1024).toFixed(1)} MB
-                                                </span>
+                        </span>
                                             </div>
 
                                             <div className="file-actions">
@@ -860,11 +978,12 @@ function CustomerProfile() {
                     <div className="modal-content-card">
                         <div className="modal-header">
                             <h3>Log Interaction</h3>
-                            <button onClick={handleCloseLogModal} className="close-btn"><FiX/></button>
+                            <button onClick={handleCloseLogModal} className="close-btn">
+                                <FiX/>
+                            </button>
                         </div>
 
                         <div className="modal-body">
-
                             <div className="form-group">
                                 <label>Description / Notes</label>
                                 <textarea
@@ -876,19 +995,22 @@ function CustomerProfile() {
                                 />
                             </div>
 
-                            {newInteractionData.type === 'Task' && (
-                                <div className="task-extra-fields"
-                                     style={{marginTop: '15px', display: 'flex', gap: '15px'}}>
-
+                            {newInteractionData.type === "Task" && (
+                                <div
+                                    className="task-extra-fields"
+                                    style={{marginTop: "15px", display: "flex", gap: "15px"}}
+                                >
                                     <div className="form-group" style={{flex: 1}}>
                                         <label>Priority</label>
                                         <select
                                             className="form-control"
-                                            value={newInteractionData.priority || 'Medium'}
-                                            onChange={(e) => setNewInteractionData({
-                                                ...newInteractionData,
-                                                priority: e.target.value
-                                            })}
+                                            value={newInteractionData.priority || "Medium"}
+                                            onChange={(e) =>
+                                                setNewInteractionData({
+                                                    ...newInteractionData,
+                                                    priority: e.target.value
+                                                })
+                                            }
                                         >
                                             <option value="Low">Low</option>
                                             <option value="Medium">Medium</option>
@@ -901,21 +1023,26 @@ function CustomerProfile() {
                                         <input
                                             type="date"
                                             className="form-control"
-                                            value={newInteractionData.dueDate || ''}
-                                            onChange={(e) => setNewInteractionData({
-                                                ...newInteractionData,
-                                                dueDate: e.target.value
-                                            })}
+                                            value={newInteractionData.dueDate || ""}
+                                            onChange={(e) =>
+                                                setNewInteractionData({
+                                                    ...newInteractionData,
+                                                    dueDate: e.target.value
+                                                })
+                                            }
                                         />
                                     </div>
-
                                 </div>
                             )}
                         </div>
 
                         <div className="modal-footer">
-                            <button className="cancel-btn" onClick={handleCloseLogModal}>Cancel</button>
-                            <button className="save-btn" onClick={handleSaveNewInteraction}>Save Interaction</button>
+                            <button className="cancel-btn" onClick={handleCloseLogModal}>
+                                Cancel
+                            </button>
+                            <button className="save-btn" onClick={handleSaveNewInteraction}>
+                                Save Interaction
+                            </button>
                         </div>
                     </div>
                 </div>

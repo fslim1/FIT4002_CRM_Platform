@@ -2,9 +2,8 @@ import {useCallback, useState} from 'react'
 import {Link, useLocation, useNavigate} from 'react-router-dom'
 import {ArrowRight, Lock, Mail} from 'lucide-react'
 import {useAuth} from '@/context/auth'
-import { requestGmailToken } from '@/context/AuthContext'
+import {requestGmailToken} from '@/api/gmailToken'
 import AppHeader from '@/components/AppHeader'
-import GoogleSignInButton from '@/components/GoogleSignInButton'
 import {Button} from '@/components/ui/button'
 import {Input} from '@/components/ui/input'
 import {Label} from '@/components/ui/label'
@@ -20,11 +19,22 @@ export default function Login() {
     const [email, setEmail] = useState('')
     const [password, setPassword] = useState('')
     const [error, setError] = useState('')
+    const [notice, setNotice] = useState(location.state?.notice || '')
+    // Set when the account exists but its email was never confirmed, so the
+    // form can offer a way back to the confirmation step.
+    const [unconfirmedEmail, setUnconfirmedEmail] = useState('')
     const [submitting, setSubmitting] = useState(false)
+
+    const goToConfirmation = (address) =>
+        navigate(`/verify-email?email=${encodeURIComponent(address)}`, {
+            state: {codeSent: false},
+        })
 
     const handleSubmit = async (e) => {
         e.preventDefault()
         setError('')
+        setNotice('')
+        setUnconfirmedEmail('')
 
         if (!email || !password) {
             setError('Please enter your email and password.')
@@ -36,8 +46,16 @@ export default function Login() {
             await login(email.trim(), password)
             navigate(redirectTo, {replace: true})
         } catch (err) {
+            console.error('Login failed:', err)
+            const data = err?.response?.data || {}
+            if (data.code === 'email_not_verified') {
+                setUnconfirmedEmail(data.email || email.trim())
+            }
             setError(
-                err?.response?.data?.message || 'Unable to log in. Please try again.'
+                data.message ||
+                (err?.response
+                    ? 'Unable to log in. Please try again.'
+                    : 'We could not reach the server. Check that the backend is running and try again.')
             )
         } finally {
             setSubmitting(false)
@@ -49,29 +67,10 @@ export default function Login() {
             setError('')
             setSubmitting(true)
             try {
+                // The token is the whole message: the server asks Google who
+                // it belongs to, so there is nothing for the browser to claim.
                 const accessToken = await requestGmailToken()
-                
-                const res = await fetch('https://www.googleapis.com/oauth2/v3/userinfo',{
-                    headers: { 
-                        Authorization: `Bearer ${accessToken}`,
-                    },
-                })
-
-                const data = await res.json()
-                const googleEmail = data.email
-                const name = data.name || (data.email ? data.email.split('@')[0] : 'User')
-                const googleId = data.sub
-
-                if (!googleEmail) {
-                    throw new Error('Google did not provide a verified email address.')
-                }
-
-                await loginWithGoogle({
-                    email: googleEmail,
-                    fullName: name,
-                    googleId,
-                    gmailAccessToken: accessToken,
-                })
+                await loginWithGoogle({gmailAccessToken: accessToken})
                 navigate(redirectTo, {replace: true})
             } catch (err) {
                 if (err?.error === 'access_denied' || err?.message?.includes('closed')) {
@@ -90,9 +89,6 @@ export default function Login() {
         [loginWithGoogle, navigate, redirectTo]
     )
 
-    const handleGoogleError = useCallback((message) => {
-        setError(message || 'Google sign-in is unavailable.')
-    }, [])
 
     return (
         <div
@@ -155,7 +151,24 @@ export default function Login() {
 
                             {error && (
                                 <Alert variant="destructive">
-                                    <AlertDescription>{error}</AlertDescription>
+                                    <AlertDescription>
+                                        {error}
+                                        {unconfirmedEmail && (
+                                            <Button
+                                                type="button"
+                                                variant="link"
+                                                onClick={() => goToConfirmation(unconfirmedEmail)}
+                                                className="h-auto px-0 pt-2 text-destructive underline"
+                                            >
+                                                Confirm your email now
+                                            </Button>
+                                        )}
+                                    </AlertDescription>
+                                </Alert>
+                            )}
+                            {notice && !error && (
+                                <Alert>
+                                    <AlertDescription>{notice}</AlertDescription>
                                 </Alert>
                             )}
 

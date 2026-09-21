@@ -4,6 +4,7 @@ const Customer = require('../models/Customer')
 const CustomerAccount = require('../models/CustomerAccount')
 const Deal = require('../models/Deal')
 const {signPortalToken, requirePortalAuth} = require('../middleware/portalAuth')
+const {validatePassword} = require('../services/passwordPolicy')
 
 const router = express.Router()
 
@@ -84,17 +85,11 @@ router.post('/register', portalLimiter, async (req, res) => {
         if (!isValidEmail(email)) {
             return res.status(400).json({message: 'Please provide a valid email'})
         }
-        if (
-            typeof password !== 'string' ||
-            password.length < 8 ||
-            !/[a-z]/.test(password) ||
-            !/[A-Z]/.test(password) ||
-            !/[0-9]/.test(password)
-        ) {
-            return res.status(400).json({
-                message:
-                    'Password must be at least 8 characters and include an uppercase letter, a lowercase letter and a number',
-            })
+        const passwordCheck = validatePassword(password)
+        if (!passwordCheck.ok) {
+            return res
+                .status(400)
+                .json({message: passwordCheck.message, field: 'password', failed: passwordCheck.failed})
         }
 
         const normalized = email.toLowerCase().trim()

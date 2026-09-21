@@ -8,7 +8,7 @@ const {
   getCustomers,
   getCustomerById,
   updateCustomer,
-  deleteCustomer,
+    deleteCustomer,
   uploadCustomerFile,
   viewCustomerFile,
   downloadCustomerFile,

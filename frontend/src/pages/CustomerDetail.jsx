@@ -1,10 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import api from '../services/api';
-import './Customers.css';
-import AddCustomerModal from '../components/AddCustomerModal';
-import EmailComposer from '../components/EmailComposer';
-import '../components/EmailComposer.css';
+import {useState, useEffect, useCallback, useRef} from "react";
+import {useParams, Link} from "react-router-dom";
+import api from "../services/api";
+import "./Customers.css";
+import AddCustomerModal from "../components/AddCustomerModal";
+import EmailComposer from "../components/EmailComposer";
+import "../components/EmailComposer.css";
 
 const CustomerDetail = () => {
     const {id} = useParams();
@@ -17,30 +17,33 @@ const CustomerDetail = () => {
     const [uploadError, setUploadError] = useState(null);
     const fileInputRef = useRef(null);
 
-    const fetchCustomer = async (showLoading = true) => {
-        try {
-            if (showLoading) setLoading(true);
-            const res = await api.get(`/customers/${id}`);
-            setCustomer(res.data);
-            if (showLoading) setError(null);
-        } catch (err) {
-            console.error(err);
-            if (showLoading) setError('Failed to fetch customer details.');
-        } finally {
-            if (showLoading) setLoading(false);
-        }
-    };
+    const fetchCustomer = useCallback(
+        async (showLoading = true) => {
+            try {
+                if (showLoading) setLoading(true);
+                const res = await api.get(`/customers/${id}`);
+                setCustomer(res.data);
+                if (showLoading) setError(null);
+            } catch (err) {
+                console.error(err);
+                if (showLoading) setError("Failed to fetch customer details.");
+            } finally {
+                if (showLoading) setLoading(false);
+            }
+        },
+        [id]
+    );
 
     useEffect(() => {
         fetchCustomer();
-    }, [id]);
+    }, [fetchCustomer]);
 
     const handleCustomerUpdated = () => {
         fetchCustomer(false);
     };
 
     const handleInteraction = async (type) => {
-        if (type === 'Email') {
+        if (type === "Email") {
             setIsEmailModalOpen(true);
             return;
         }
@@ -60,7 +63,7 @@ const CustomerDetail = () => {
     const handleEmailSent = async (data) => {
         try {
             await api.post(`/customers/${id}/interactions`, {
-                type: 'Email',
+                type: "Email",
                 details: `Sent Email - Subject: ${data.desc}`
             });
             fetchCustomer(false);
@@ -79,56 +82,60 @@ const CustomerDetail = () => {
         }
 
         const formData = new FormData();
-        formData.append('file', file);
+        formData.append("file", file);
 
         try {
             setUploading(true);
             setUploadError(null);
             await api.post(`/customers/${id}/files`, formData, {
-                headers: {'Content-Type': 'multipart/form-data'}
+                headers: {"Content-Type": "multipart/form-data"}
             });
             fetchCustomer();
         } catch (err) {
             console.error(err);
-            setUploadError(err.response?.data?.message || 'Failed to upload file.');
+            setUploadError(err.response?.data?.message || "Failed to upload file.");
         } finally {
             setUploading(false);
-            if (fileInputRef.current) fileInputRef.current.value = '';
+            if (fileInputRef.current) fileInputRef.current.value = "";
         }
     };
 
     const formatSize = (bytes) => {
-        if (!bytes) return '0 B';
+        if (!bytes) return "0 B";
         const k = 1024;
-        const sizes = ['B', 'KB', 'MB', 'GB'];
+        const sizes = ["B", "KB", "MB", "GB"];
         const i = Math.floor(Math.log(bytes) / Math.log(k));
-        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
     };
 
     const getMergedTimeline = () => {
         if (!customer) return [];
         let events = [];
         if (customer.attachments) {
-            events = events.concat(customer.attachments.map(a => ({
-                id: a._id,
-                date: new Date(a.uploadedAt),
-                content: `Uploaded document: ${a.originalName}`,
-                icon: '📄'
-            })));
+            events = events.concat(
+                customer.attachments.map((a) => ({
+                    id: a._id,
+                    date: new Date(a.uploadedAt),
+                    content: `Uploaded document: ${a.originalName}`,
+                    icon: "📄"
+                }))
+            );
         }
         if (customer.interactions) {
-            events = events.concat(customer.interactions.map(i => ({
-                id: i._id,
-                date: new Date(i.date),
-                content: `Logged ${i.type}: ${i.details}`,
-                icon: i.type === 'Email' ? '✉️' : (i.type === 'Call' ? '📞' : '📝')
-            })));
+            events = events.concat(
+                customer.interactions.map((i) => ({
+                    id: i._id,
+                    date: new Date(i.date),
+                    content: `Logged ${i.type}: ${i.details}`,
+                    icon: i.type === "Email" ? "✉️" : i.type === "Call" ? "📞" : "📝"
+                }))
+            );
         }
         events.push({
-            id: 'creation',
+            id: "creation",
             date: new Date(customer.createdAt),
-            content: 'Added to the system.',
-            icon: '👤'
+            content: "Added to the system.",
+            icon: "👤"
         });
 
         events.sort((a, b) => b.date - a.date);
@@ -143,13 +150,25 @@ const CustomerDetail = () => {
 
     return (
         <div className="customer-detail-page">
-            <div className="customer-detail-header"
-                 style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '30px'}}>
+            <div
+                className="customer-detail-header"
+                style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: "30px"
+                }}
+            >
                 <div>
-                    <Link to="/customers" className="back-link">← Back to Customers</Link>
-                    <h1 style={{marginTop: '10px'}}>Customer Profile</h1>
+                    <Link to="/customers" className="back-link">
+                        ← Back to Customers
+                    </Link>
+                    <h1 style={{marginTop: "10px"}}>Customer Profile</h1>
                 </div>
-                <button className="add-contact-btn" onClick={() => setIsEditModalOpen(true)}>
+                <button
+                    className="add-contact-btn"
+                    onClick={() => setIsEditModalOpen(true)}
+                >
                     Edit Customer
                 </button>
             </div>
@@ -167,19 +186,44 @@ const CustomerDetail = () => {
                     <p className="profile-company">{customer.company}</p>
 
                     <div className="profile-contact-info">
-                        <p><strong>Email:</strong> {customer.email}</p>
-                        <p><strong>Phone:</strong> {customer.phone}</p>
-                        <p><strong>Department:</strong> {customer.department}</p>
-                        <p><strong>Address:</strong> {customer.address}</p>
+                        <p>
+                            <strong>Email:</strong> {customer.email}
+                        </p>
+                        <p>
+                            <strong>Phone:</strong> {customer.phone}
+                        </p>
+                        <p>
+                            <strong>Department:</strong> {customer.department}
+                        </p>
+                        <p>
+                            <strong>Address:</strong> {customer.address}
+                        </p>
                     </div>
 
-                    <div className="profile-actions" style={{marginTop: '20px', display: 'flex', gap: '10px'}}>
-                        <button className="add-contact-btn" onClick={() => handleInteraction('Email')}
-                                style={{flex: 1, textAlign: 'center', color: '#fff'}}>✉️ Email
+                    <div
+                        className="profile-actions"
+                        style={{marginTop: "20px", display: "flex", gap: "10px"}}
+                    >
+                        <button
+                            className="add-contact-btn"
+                            onClick={() => handleInteraction("Email")}
+                            style={{flex: 1, textAlign: "center", color: "#fff"}}
+                        >
+                            ✉️ Email
                         </button>
-                        <a className="add-contact-btn" href={`tel:${customer.phone}`}
-                           onClick={() => handleInteraction('Call')}
-                           style={{flex: 1, textDecoration: 'none', textAlign: 'center', color: '#fff'}}>📞 Call</a>
+                        <a
+                            className="add-contact-btn"
+                            href={`tel:${customer.phone}`}
+                            onClick={() => handleInteraction("Call")}
+                            style={{
+                                flex: 1,
+                                textDecoration: "none",
+                                textAlign: "center",
+                                color: "#fff"
+                            }}
+                        >
+                            📞 Call
+                        </a>
                     </div>
                 </div>
 
@@ -189,32 +233,41 @@ const CustomerDetail = () => {
                         <div className="timeline-placeholder">
                             {timelineEvents.map((event) => (
                                 <div className="timeline-item" key={`timeline-${event.id}`}>
-                                    <span className="timeline-date">{event.date.toLocaleString()}</span>
-                                    <p>{event.icon} <strong>{event.content}</strong></p>
+                  <span className="timeline-date">
+                    {event.date.toLocaleString()}
+                  </span>
+                                    <p>
+                                        {event.icon} <strong>{event.content}</strong>
+                                    </p>
                                 </div>
                             ))}
                         </div>
                     </div>
 
                     <div className="files-section">
-                        <div style={{
-                            display: 'flex',
-                            justifyContent: 'space-between',
-                            alignItems: 'center',
-                            marginBottom: '15px'
-                        }}>
+                        <div
+                            style={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                marginBottom: "15px"
+                            }}
+                        >
                             <h3 style={{margin: 0}}>Files & Documents</h3>
                             <div>
                                 <input
                                     type="file"
                                     ref={fileInputRef}
                                     onChange={handleFileUpload}
-                                    style={{display: 'none'}}
+                                    style={{display: "none"}}
                                     accept=".pdf,.doc,.docx,.txt,.csv,.jpg,.jpeg,.png,.gif,.webp"
                                 />
-                                <button className="add-contact-btn" onClick={() => fileInputRef.current.click()}
-                                        disabled={uploading}>
-                                    {uploading ? 'Uploading...' : 'Upload File'}
+                                <button
+                                    className="add-contact-btn"
+                                    onClick={() => fileInputRef.current.click()}
+                                    disabled={uploading}
+                                >
+                                    {uploading ? "Uploading..." : "Upload File"}
                                 </button>
                             </div>
                         </div>
@@ -223,14 +276,15 @@ const CustomerDetail = () => {
 
                         <div className="files-list">
                             {customer.attachments && customer.attachments.length > 0 ? (
-                                customer.attachments.map(file => (
+                                customer.attachments.map((file) => (
                                     <div className="file-item" key={file._id}>
                                         <div className="file-info">
                                             <span className="file-icon">📄</span>
                                             <div>
                                                 <strong>{file.originalName}</strong>
                                                 <div className="file-meta">
-                                                    {formatSize(file.size)} • {new Date(file.uploadedAt).toLocaleDateString()}
+                                                    {formatSize(file.size)} •{" "}
+                                                    {new Date(file.uploadedAt).toLocaleDateString()}
                                                 </div>
                                             </div>
                                         </div>
@@ -243,7 +297,9 @@ const CustomerDetail = () => {
                                     </div>
                                 ))
                             ) : (
-                                <p style={{color: '#777', fontStyle: 'italic'}}>No files attached yet.</p>
+                                <p style={{color: "#777", fontStyle: "italic"}}>
+                                    No files attached yet.
+                                </p>
                             )}
                         </div>
                     </div>

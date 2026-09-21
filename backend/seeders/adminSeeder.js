@@ -6,7 +6,7 @@
  *
  * Required .env variables:
  *   ADMIN_EMAIL     Work email for the admin account
- *   ADMIN_PASSWORD  Temporary password (must be >= 8 chars)
+ *   ADMIN_PASSWORD  Temporary password (must meet the shared password rules)
  *   ADMIN_FULLNAME  Display name
  *   ADMIN_COMPANY   Company name (all admin-managed users share this)
  *
@@ -17,6 +17,7 @@
 const mongoose = require('mongoose')
 const dotenv = require('dotenv')
 const User = require('../models/User')
+const {validatePassword} = require('../services/passwordPolicy')
 
 dotenv.config()
 
@@ -39,8 +40,9 @@ if (missing.length > 0) {
     process.exit(1)
 }
 
-if (ADMIN_PASSWORD.length < 8) {
-    console.error('ADMIN_PASSWORD must be at least 8 characters.')
+const passwordCheck = validatePassword(ADMIN_PASSWORD)
+if (!passwordCheck.ok) {
+    console.error(`${passwordCheck.message}.`)
     process.exit(1)
 }
 
@@ -62,6 +64,10 @@ const run = async () => {
             companyName: ADMIN_COMPANY.trim(),
             role: 'Admin',
             authProvider: 'local',
+            // The seeder runs offline against the database, with no mail
+            // relay to send a confirmation code through, so the bootstrap
+            // account is usable straight away.
+            emailVerified: true,
         })
 
         console.log(`Admin created successfully:`)

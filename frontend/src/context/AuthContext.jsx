@@ -1,6 +1,7 @@
 import {useEffect, useMemo, useState, useCallback} from 'react'
 import * as authApi from '@/api/auth'
 import {AuthContext} from '@/context/auth'
+import {requestGmailToken} from '@/api/gmailToken'
 
 const TOKEN_KEY = 'nexgen_token'
 const USER_KEY = 'nexgen_user'
@@ -12,30 +13,6 @@ const readStoredUser = () => {
     } catch {
         return null
     }
-}
-
-export const requestGmailToken = () => {
-    return new Promise((resolve, reject) => {
-        if (!window.google?.accounts?.oauth2) {
-            return reject(new Error('Google Identity Services SDK not loaded'))
-        }
-
-        const tokenClient = window.google.accounts.oauth2.initTokenClient({
-            client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-            scope:
-                'https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile',
-            prompt: '',
-            callback: (response) => {
-                if (response.error) {
-                    reject(response)
-                } else {
-                    resolve(response.access_token)
-                }
-            },
-        })
-
-        tokenClient.requestAccessToken()
-    })
 }
 
 export function AuthProvider({children}) {
@@ -90,8 +67,16 @@ export function AuthProvider({children}) {
         return u
     }, [])
 
+    // Sign-up either returns a session or asks for the emailed confirmation
+    // code, so the raw response is handed back for the page to act on.
     const signup = useCallback(async (payload) => {
-        const {token, user: u} = await authApi.signup(payload)
+        const data = await authApi.signup(payload)
+        if (data.token && data.user) persist(data.token, data.user)
+        return data
+    }, [])
+
+    const verifyEmail = useCallback(async ({email, code}) => {
+        const {token, user: u} = await authApi.verifyEmail({email, code})
         persist(token, u)
         return u
     }, [])
@@ -109,8 +94,17 @@ export function AuthProvider({children}) {
     }, [])
 
     const value = useMemo(
-        () => ({user, initializing, login, signup, loginWithGoogle, logout, requestGmailToken}),
-        [user, initializing, login, signup, loginWithGoogle, logout]
+        () => ({
+            user,
+            initializing,
+            login,
+            signup,
+            verifyEmail,
+            loginWithGoogle,
+            logout,
+            requestGmailToken,
+        }),
+        [user, initializing, login, signup, verifyEmail, loginWithGoogle, logout]
     )
 
     return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>

@@ -1,7 +1,7 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import {useCallback, useEffect, useRef, useState} from 'react';
 import {FiAlertCircle, FiCheckCircle, FiSettings, FiShield, FiUser, FiUsers} from 'react-icons/fi';
-import { fetchTeams } from '../api/teams';
-import { fetchUsers } from '../api/users';
+import {fetchTeams} from '../api/teams';
+import {fetchUsers} from '../api/users';
 import GeneralSettingsTab from '../components/admin/GeneralSettingsTab';
 import PermissionsTab from '../components/admin/PermissionsTab';
 import TeamsTab from '../components/admin/TeamsTab';

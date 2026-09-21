@@ -1,10 +1,10 @@
-import { useState } from 'react';
-import { FiCheck, FiEdit2, FiPlus, FiTrash2, FiX } from 'react-icons/fi';
-import { createTeam, deleteTeam, updateTeam } from '../../api/teams';
+import {useState} from 'react';
+import {FiCheck, FiEdit2, FiPlus, FiTrash2, FiX} from 'react-icons/fi';
+import {createTeam, deleteTeam, updateTeam} from '../../api/teams';
 
 // Create, rename and delete teams, designate a supervisor per team, and
 // toggle customer sharing between the members of each team.
-function TeamsTab({ teams, users, loading, onDirectoryChanged, notify }) {
+function TeamsTab({teams, users, loading, onDirectoryChanged, notify}) {
     const [newTeamName, setNewTeamName] = useState('');
     const [creating, setCreating] = useState(false);
     const [busyTeamId, setBusyTeamId] = useState(null);
@@ -212,7 +212,7 @@ function TeamsTab({ teams, users, loading, onDirectoryChanged, notify }) {
                                                         title="Rename team"
                                                         aria-label={`Rename ${team.name}`}
                                                     >
-                              <FiEdit2 />
+                              <FiEdit2/>
                             </button>
                           </span>
                                             )}

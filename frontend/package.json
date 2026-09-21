@@ -5,8 +5,10 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prebuild": "node scripts/check-duplicate-modules.mjs",
     "build": "vite build",
     "lint": "eslint .",
+    "check:modules": "node scripts/check-duplicate-modules.mjs",
     "preview": "vite preview"
   },
   "imports": {

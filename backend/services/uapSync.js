@@ -1,6 +1,6 @@
 const User = require('../models/User');
 const Task = require('../models/Task');
- 
+
 // ---------------------------------------------------------------------------
 // Identity resolution
 // Looks up a CRM user and returns the three identifiers UAP's contract wants:
@@ -10,7 +10,7 @@ const Task = require('../models/Task');
 async function resolveIdentity(userId) {
     const user = await User.findById(userId).select('_id googleId email');
     if (!user) {
-        return { externalUserId: userId, googleId: null, email: null };
+        return {externalUserId: userId, googleId: null, email: null};
     }
     return {
         externalUserId: user._id,
@@ -18,7 +18,7 @@ async function resolveIdentity(userId) {
         email: user.email
     };
 }
- 
+
 // ---------------------------------------------------------------------------
 // Source context
 // Turns a task's linked customer/deal (internal MongoDB references) into
@@ -30,7 +30,7 @@ function buildSourceContext(task) {
         dealName: (task.deal && task.deal.name) || undefined
     };
 }
- 
+
 // ---------------------------------------------------------------------------
 // Payload builder
 // Assembles the exact JSON shape UAP's task sync expects.
@@ -46,10 +46,10 @@ async function buildTaskPayload(task) {
             return resolveIdentity(id);
         })
     );
- 
+
     const createdByEntry = task.createdBy && task.createdBy._id ? task.createdBy._id : task.createdBy;
     const createdBy = await resolveIdentity(createdByEntry);
- 
+
     return {
         externalId: task._id,
         title: task.title,
@@ -62,7 +62,7 @@ async function buildTaskPayload(task) {
         sourceContext: buildSourceContext(task)
     };
 }
- 
+
 // ---------------------------------------------------------------------------
 // Push with retry
 // Sends one HTTP request to UAP. If it fails (network error or non-2xx
@@ -77,7 +77,7 @@ async function pushWithRetry(url, options, attempts = 3) {
         } catch (err) {
             console.error(`UAP push failed (attempt ${i + 1}/${attempts}):`, err.message);
         }
- 
+
         if (i < attempts - 1) {
             const delayMs = 1000 * Math.pow(2, i); // 1s, 2s, 4s...
             await new Promise(resolve => setTimeout(resolve, delayMs));
@@ -85,7 +85,7 @@ async function pushWithRetry(url, options, attempts = 3) {
     }
     return false;
 }
- 
+
 // ---------------------------------------------------------------------------
 // pushTaskSync
 // Sends a create/update event for a task. On success, stamps lastSyncedAt so
@@ -96,9 +96,9 @@ async function pushTaskSync(task) {
         console.warn('UAP_TASK_SYNC_URL not configured - skipping UAP sync');
         return false;
     }
- 
+
     const payload = await buildTaskPayload(task);
- 
+
     const ok = await pushWithRetry(process.env.UAP_TASK_SYNC_URL, {
         method: 'POST',
         headers: {
@@ -107,14 +107,14 @@ async function pushTaskSync(task) {
         },
         body: JSON.stringify(payload)
     });
- 
+
     if (ok) {
-        await Task.findByIdAndUpdate(task._id, { lastSyncedAt: new Date() });
+        await Task.findByIdAndUpdate(task._id, {lastSyncedAt: new Date()});
     }
- 
+
     return ok;
 }
- 
+
 // ---------------------------------------------------------------------------
 // pushTaskDelete
 // Notifies UAP that a task was deleted. No body needed - the URL path alone
@@ -125,9 +125,9 @@ async function pushTaskDelete(taskId) {
         console.warn('UAP_BASE_URL or UAP_PLATFORM_ID not configured - skipping UAP delete sync');
         return false;
     }
- 
+
     const url = `${process.env.UAP_BASE_URL}/api/platforms/${process.env.UAP_PLATFORM_ID}/tasks/${taskId}/delete`;
- 
+
     return pushWithRetry(url, {
         method: 'POST',
         headers: {
@@ -135,7 +135,7 @@ async function pushTaskDelete(taskId) {
         }
     });
 }
- 
+
 module.exports = {
     resolveIdentity,
     buildSourceContext,
