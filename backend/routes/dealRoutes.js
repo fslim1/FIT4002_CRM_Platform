@@ -16,6 +16,9 @@ const {
 } = require('../middleware/teamScope')
 const { hasPermission } = require('../middleware/permissions')
 const { getDaysInStage, getDaysSinceActivity, getOverdueTaskCount } = require('../services/riskFactors')
+const { computeRiskScore } = require('../services/riskScoring')
+const { getCompanyKey } = require('../middleware/companyScope')
+const DealRiskScore = require('../models/DealRiskScore')
 
 
 const STAGE_ORDER = [
@@ -31,12 +34,9 @@ router.get('/', requireAuth, async (req, res) => {
     const { userId, teamId } = req.query
 
     if (userId) {
-      // Validate the target user exists and is accessible
       const targetUser = await User.findById(userId).select('_id team companyName')
       if (!targetUser) return res.status(404).json({ message: 'User not found' })
 
-      // Admin/viewAllData: any user in their company
-      // Supervisor: only users in their own team
       if (req.user.role === 'Admin' || hasPermission(req.user, 'viewAllData')) {
         const companyIds = await getCompanyUserIds(req.user)
         const inCompany = companyIds.some(id => String(id) === String(userId))
@@ -54,7 +54,6 @@ router.get('/', requireAuth, async (req, res) => {
     }
 
     if (teamId) {
-      // Only Admin or Supervisor with viewAllData
       if (req.user.role !== 'Admin' && !hasPermission(req.user, 'viewAllData')) {
         return res.status(403).json({ message: 'Insufficient permissions' })
       }
@@ -64,7 +63,6 @@ router.get('/', requireAuth, async (req, res) => {
       return res.json(deals)
     }
 
-    // Default: return all deals visible to this user
     const scope = await getVisibleDealFilter(req.user)
     const deals = await Deal.find(scope).sort({ createdAt: -1 })
     res.json(deals)
@@ -73,7 +71,6 @@ router.get('/', requireAuth, async (req, res) => {
   }
 })
 
-// GET all status logs across visible deals (for Deal History)
 router.get('/logs', requireAuth, async (req, res) => {
   try {
     const scope = await getVisibleDealFilter(req.user)
@@ -90,7 +87,6 @@ router.get('/logs', requireAuth, async (req, res) => {
       })
     })
 
-      // Also pull deleted deal logs, scoped the same way as live deals
       const deletedLogs = await DealLog.find(await getVisibleDealLogFilter(req.user)).lean()
     deletedLogs.forEach(log => {
       logs.push({
@@ -108,15 +104,11 @@ router.get('/logs', requireAuth, async (req, res) => {
   }
 })
 
-
-
-// CREATE deal
 router.post('/', requireAuth, requireRole('User', 'Admin'), async (req, res) => {
   try {
     const { name, company, price, priority, probability, assignee, customer } = req.body
 
     if (customer) {
-        // Deals can only be linked to customers the creator can actually see
       const customerScope = await getVisibleCustomerFilter(req.user)
       const existingCustomer = await Customer.findOne({
         $and: [
@@ -151,7 +143,6 @@ router.post('/', requireAuth, requireRole('User', 'Admin'), async (req, res) => 
   }
 })
 
-// UPDATE deal stage (drag & drop within pipeline)
 router.patch('/:id/stage', requireAuth, async (req, res) => {
   try {
     const { stage } = req.body
@@ -169,13 +160,11 @@ router.patch('/:id/stage', requireAuth, async (req, res) => {
     if (nextIndex < currentIndex || ['Won', 'Lost'].includes(deal.stage))
       return res.status(400).json({ message: 'Stage transition not allowed' })
 
-    // Won/Lost must use /outcome route
     if (['Won', 'Lost'].includes(stage))
       return res.status(400).json({ message: 'Use /outcome to mark Won or Lost' })
 
     deal.statusLogs.push({ fromStage: deal.stage, toStage: stage, changedBy: req.user._id })
     deal.stage = stage
-    // H3: a stage change always resets the clock for daysInStage
     deal.stageEnteredDate = new Date()
     await deal.save()
     res.json(deal)
@@ -184,7 +173,6 @@ router.patch('/:id/stage', requireAuth, async (req, res) => {
   }
 })
 
-// MARK deal as Won or Lost
 router.patch('/:id/outcome', requireAuth, async (req, res) => {
   try {
     const { outcome } = req.body
@@ -201,7 +189,6 @@ router.patch('/:id/outcome', requireAuth, async (req, res) => {
 
     deal.statusLogs.push({ fromStage: deal.stage, toStage: outcome, changedBy: req.user._id })
     deal.stage = outcome
-    // H3: Won/Lost is still a stage transition for this purpose
     deal.stageEnteredDate = new Date()
     await deal.save()
     res.json(deal)
@@ -210,8 +197,6 @@ router.patch('/:id/outcome', requireAuth, async (req, res) => {
   }
 })
 
-// DELETE deal. Admin by default; grantable per person via
-// Settings -> Permissions. Non-admin holders stay team scoped.
 router.delete('/:id', requireAuth, requirePermission('deleteRecords'), async (req, res) => {
   try {
     const deal = await Deal.findById(req.params.id)
@@ -233,7 +218,6 @@ router.delete('/:id', requireAuth, requirePermission('deleteRecords'), async (re
   }
 })
 
-// UPDATE deal probability
 router.patch('/:id/probability', requireAuth, async (req, res) => {
     try {
         const {probability} = req.body
@@ -252,10 +236,7 @@ router.patch('/:id/probability', requireAuth, async (req, res) => {
     }
 })
 
-// GET /api/deals/:id/risk-factors — H3, H4, H5 combined.
-// Returns the three raw risk signals for a single deal. This does not
-// compute a risk score/label — that's a later story once benchmarks (H1/H2)
-// and these factors are both ready to be combined.
+// GET /api/deals/:id/risk-factors — H3, H4, H5 raw signals only, no scoring.
 router.get('/:id/risk-factors', requireAuth, async (req, res) => {
   try {
     const deal = await Deal.findById(req.params.id)
@@ -278,6 +259,39 @@ router.get('/:id/risk-factors', requireAuth, async (req, res) => {
   } catch (err) {
     console.error('Get risk factors error:', err)
     res.status(500).json({ message: 'Failed to compute risk factors' })
+  }
+})
+
+// GET /api/deals/:id/risk-score — H7. Always computed fresh from live data
+// (never a stale cached job result), then persisted for history/reporting.
+router.get('/:id/risk-score', requireAuth, async (req, res) => {
+  try {
+    const deal = await Deal.findById(req.params.id)
+    if (!deal) return res.status(404).json({ message: 'Deal not found' })
+    if (!(await canAccessDeal(req.user, deal)))
+      return res.status(403).json({ message: 'You do not have access to this deal' })
+
+    const companyKey = getCompanyKey(req.user)
+    const result = await computeRiskScore(deal, companyKey)
+
+    await DealRiskScore.findOneAndUpdate(
+      { companyKey, deal: deal._id },
+      {
+        companyKey,
+        deal: deal._id,
+        riskLevel: result.riskLevel,
+        points: result.points,
+        factors: result.factors,
+        reasons: result.reasons,
+        calculatedAt: new Date(),
+      },
+      { upsert: true, new: true }
+    )
+
+    res.json({ dealId: deal._id, ...result })
+  } catch (err) {
+    console.error('Get risk score error:', err)
+    res.status(500).json({ message: 'Failed to compute risk score' })
   }
 })
 
