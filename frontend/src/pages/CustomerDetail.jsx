@@ -176,11 +176,8 @@ const CustomerDetail = () => {
             <div className="customer-profile-container">
                 <div className="profile-sidebar">
                     {customer.companyLogo ? (
-                        <img
-                            src={`${import.meta.env.VITE_API_URL || "http://localhost:5001"}${customer.companyLogo}`}
-                            alt={`${customer.company} logo`}
-                            className="profile-logo"
-                        />
+                        <img src={`${(import.meta.env.VITE_API_URL || 'http://localhost:5001/api').replace(/\/api\/?$/, '')}${customer.companyLogo.startsWith('/') ? '' : '/'}${customer.companyLogo}`}
+                             alt={`${customer.company} logo`} className="profile-logo"/>
                     ) : (
                         <div className="profile-logo-placeholder">🏢</div>
                     )}
@@ -292,20 +289,10 @@ const CustomerDetail = () => {
                                             </div>
                                         </div>
                                         <div className="file-actions">
-                                            <a
-                                                href={`${import.meta.env.VITE_API_URL || "http://localhost:5001"}/api/customers/${customer._id}/files/${file._id}/view`}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="btn-link"
-                                            >
-                                                Open
-                                            </a>
-                                            <a
-                                                href={`${import.meta.env.VITE_API_URL || "http://localhost:5001"}/api/customers/${customer._id}/files/${file._id}/download`}
-                                                className="btn-link"
-                                            >
-                                                Download
-                                            </a>
+                                            <a href={`${(import.meta.env.VITE_API_URL || 'http://localhost:5001/api').replace(/\/$/, '')}/customers/${customer._id}/files/${file._id}/view`}
+                                               target="_blank" rel="noopener noreferrer" className="btn-link">Open</a>
+                                            <a href={`${(import.meta.env.VITE_API_URL || 'http://localhost:5001/api').replace(/\/$/, '')}/customers/${customer._id}/files/${file._id}/download`}
+                                               className="btn-link">Download</a>
                                         </div>
                                     </div>
                                 ))
