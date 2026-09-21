@@ -15,6 +15,7 @@ const {
   getTeamMemberIds
 } = require('../middleware/teamScope')
 const { hasPermission } = require('../middleware/permissions')
+const { getDaysInStage, getDaysSinceActivity, getOverdueTaskCount } = require('../services/riskFactors')
 
 
 const STAGE_ORDER = [
@@ -110,7 +111,6 @@ router.get('/logs', requireAuth, async (req, res) => {
 
 
 // CREATE deal
-// CREATE deal
 router.post('/', requireAuth, requireRole('User', 'Admin'), async (req, res) => {
   try {
     const { name, company, price, priority, probability, assignee, customer } = req.body
@@ -141,6 +141,7 @@ router.post('/', requireAuth, requireRole('User', 'Admin'), async (req, res) => 
     const deal = new Deal({
       name, company, price, priority, probability, assignee, customer,
       stage: 'Qualified',
+      stageEnteredDate: new Date(),
       createdBy: req.user._id
     })
     await deal.save()
@@ -174,6 +175,8 @@ router.patch('/:id/stage', requireAuth, async (req, res) => {
 
     deal.statusLogs.push({ fromStage: deal.stage, toStage: stage, changedBy: req.user._id })
     deal.stage = stage
+    // H3: a stage change always resets the clock for daysInStage
+    deal.stageEnteredDate = new Date()
     await deal.save()
     res.json(deal)
   } catch {
@@ -198,6 +201,8 @@ router.patch('/:id/outcome', requireAuth, async (req, res) => {
 
     deal.statusLogs.push({ fromStage: deal.stage, toStage: outcome, changedBy: req.user._id })
     deal.stage = outcome
+    // H3: Won/Lost is still a stage transition for this purpose
+    deal.stageEnteredDate = new Date()
     await deal.save()
     res.json(deal)
   } catch {
@@ -245,6 +250,35 @@ router.patch('/:id/probability', requireAuth, async (req, res) => {
     } catch {
         res.status(500).json({message: 'Failed to update probability'})
     }
+})
+
+// GET /api/deals/:id/risk-factors — H3, H4, H5 combined.
+// Returns the three raw risk signals for a single deal. This does not
+// compute a risk score/label — that's a later story once benchmarks (H1/H2)
+// and these factors are both ready to be combined.
+router.get('/:id/risk-factors', requireAuth, async (req, res) => {
+  try {
+    const deal = await Deal.findById(req.params.id)
+    if (!deal) return res.status(404).json({ message: 'Deal not found' })
+    if (!(await canAccessDeal(req.user, deal)))
+      return res.status(403).json({ message: 'You do not have access to this deal' })
+
+    const [daysSinceActivity, overdueTaskCount] = await Promise.all([
+      getDaysSinceActivity(deal),
+      getOverdueTaskCount(deal._id),
+    ])
+
+    res.json({
+      dealId: deal._id,
+      daysInStage: getDaysInStage(deal),
+      daysSinceActivity: daysSinceActivity.days,
+      neverContacted: daysSinceActivity.neverContacted,
+      overdueTaskCount,
+    })
+  } catch (err) {
+    console.error('Get risk factors error:', err)
+    res.status(500).json({ message: 'Failed to compute risk factors' })
+  }
 })
 
 module.exports = router

@@ -1,72 +1,72 @@
-import {useState } from 'react';
-import { FiX, FiSend, FiAlertCircle } from "react-icons/fi";
+import {useState} from 'react';
+import {FiX, FiSend, FiAlertCircle} from "react-icons/fi";
 import api from '../api/client';
 
-export function EmailComposer({ customerEmail, customerId, onClose, onEmailSent }) {
+export function EmailComposer({customerEmail, customerId, onClose, onEmailSent}) {
   const [subject, setSubject] = useState("");
   const [message, setMessage] = useState("");
-  const [isSending, setIsSending] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
+    const [isSending, setIsSending] = useState(false);
+    const [errorMsg, setErrorMsg] = useState("");
 
   const handleSend = async () => {
     if (!subject.trim() || !message.trim()) {
-      setErrorMsg("Please fill out both the subject and message fields.");
+        setErrorMsg("Please fill out both the subject and message fields.");
+        return;
+    }
+
+      const accessToken = window.localStorage.getItem('google_access_token') ||
+          window.sessionStorage.getItem('accessToken');
+
+      if (!accessToken) {
+          setErrorMsg("Google authentication required to send emails. Please link your account in Settings.");
       return;
     }
 
-    const accessToken = window.localStorage.getItem('google_access_token') || 
-                        window.sessionStorage.getItem('accessToken');
-
-    if (!accessToken) {
-      setErrorMsg("Google authentication required to send emails. Please link your account in Settings.");
-      return;
-    }
-
-    setIsSending(true);
+      setIsSending(true);
 
     // This is where you would call your Django API later
-    const payload = {
-      type: "Email",
-      details: message, 
-      emailSubject: subject || "CRM Update",
-      customerEmail: customerEmail,
-      googleAccessToken: accessToken
-    };
-    
-    try {
-      await api.post(`/customers/${customerId}/interactions`, payload);
-      
-      if (onEmailSent) {
-        onEmailSent();
+      const payload = {
+          type: "Email",
+          details: message,
+          emailSubject: subject || "CRM Update",
+          customerEmail: customerEmail,
+          googleAccessToken: accessToken
+      };
+
+      try {
+          await api.post(`/customers/${customerId}/interactions`, payload);
+
+          if (onEmailSent) {
+              onEmailSent();
+          }
+
+          setSubject("");
+          setMessage("");
+          onClose();
+
+          console.log("Email sent and interaction logged successfully!");
+      } catch (err) {
+          console.error("Failed to execute live email pipeline:", err);
+          setErrorMsg(err.response?.data?.message || "Could not dispatch email. Ensure your Google account is linked.");
+      } finally {
+          setIsSending(false);
       }
-      
-      setSubject("");
-      setMessage("");
-      onClose();
-      
-      console.log("Email sent and interaction logged successfully!");
-    } catch (err) {
-      console.error("Failed to execute live email pipeline:", err);
-      setErrorMsg(err.response?.data?.message || "Could not dispatch email. Ensure your Google account is linked.");
-    } finally {
-      setIsSending(false);
-    }
   };
 
   return (
-    <div className="side-panel"> 
+      <div className="side-panel">
       <div className="side-panel-header">
         <h4>Compose Email</h4>
         <button onClick={onClose} className="close-btn"><FiX /></button>
       </div>
 
       <div className="side-panel-body">
-        {errorMsg && (
-          <div className="error-message">
-            <FiAlertCircle size={16} style={{ flexShrink: 0 }} />
-            <span>{errorMsg}</span>
-          </div>
-        )}
+          {errorMsg && (
+              <div className="error-message">
+                  <FiAlertCircle size={16} style={{flexShrink: 0}}/>
+                  <span>{errorMsg}</span>
+              </div>
+          )}
         <div className="side-panel-row">
           <span className="detail-label">To:</span>
           <span>{customerEmail}</span>
@@ -101,7 +101,7 @@ export function EmailComposer({ customerEmail, customerId, onClose, onEmailSent 
       <div className="side-panel-footer">
         <button className="cancel-btn" onClick={onClose}>Cancel</button>
         <button className="save-btn" onClick={handleSend}>
-          <FiSend size={14}/> {"Send Email"}
+            <FiSend size={14}/> {"Send Email"}
         </button>
       </div>
     </div>

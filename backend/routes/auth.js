@@ -5,6 +5,8 @@ const {
     login,
     me,
     googleLogin,
+    verifyEmail,
+    resendVerification,
 } = require('../controllers/authController')
 const {requireAuth} = require('../middleware/auth')
 
@@ -21,6 +23,8 @@ const authLimiter = rateLimit({
 router.post('/signup', authLimiter, signup)
 router.post('/login', authLimiter, login)
 router.post('/google', authLimiter, googleLogin)
+router.post('/verify-email', authLimiter, verifyEmail)
+router.post('/resend-verification', authLimiter, resendVerification)
 router.get('/me', requireAuth, me)
 router.get('/config', (req, res) => {
     res.json({

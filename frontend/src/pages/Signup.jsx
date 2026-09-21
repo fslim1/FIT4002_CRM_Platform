@@ -1,4 +1,4 @@
-import {useState} from 'react'
+import {useEffect, useRef, useState} from 'react'
 import {Link, useNavigate} from 'react-router-dom'
 import {
     ArrowRight,
@@ -14,7 +14,7 @@ import {
     Users,
 } from 'lucide-react'
 import {useAuth} from '@/context/auth'
-import { requestGmailToken } from '@/api/gmailToken'
+import {requestGmailToken} from '@/api/gmailToken'
 import AppHeader from '@/components/AppHeader'
 import KanbanMock from '@/components/KanbanMock'
 import {Button} from '@/components/ui/button'
@@ -22,6 +22,18 @@ import {Input} from '@/components/ui/input'
 import {Label} from '@/components/ui/label'
 import {Card, CardContent} from '@/components/ui/card'
 import {Alert, AlertDescription} from '@/components/ui/alert'
+import PasswordChecklist from '@/components/PasswordChecklist'
+import {isPasswordValid} from '@/lib/passwordPolicy'
+
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/
+
+// The server confirms the mailbox really exists, which takes a moment longer
+// than a plain format check, so the button says which step is running.
+const SUBMIT_LABELS = {
+    idle: 'Create Your Account',
+    connecting: 'Connecting to Google…',
+    verifying: 'Verifying your email…',
+}
 
 const GRADIENTS = {
     primary: 'linear-gradient(180deg, #FFFFFF 0%, #DDE6FF 100%)',
@@ -78,6 +90,8 @@ const FEATURES = [
 export default function Signup() {
     const {signup} = useAuth()
     const navigate = useNavigate()
+    const emailRef = useRef(null)
+    const fieldToFocus = useRef(null)
 
     const [form, setForm] = useState({
         fullName: '',
@@ -86,14 +100,52 @@ export default function Signup() {
         companyName: '',
     })
     const [error, setError] = useState('')
-    const [submitting, setSubmitting] = useState(false)
+    const [emailError, setEmailError] = useState('')
+    const [passwordError, setPasswordError] = useState('')
+    const [phase, setPhase] = useState('idle')
+    const [focusRequest, setFocusRequest] = useState(0)
 
-    const onChange = (e) =>
-        setForm((prev) => ({...prev, [e.target.name]: e.target.value}))
+    const submitting = phase !== 'idle'
+
+    // Send the person straight back to whichever field was rejected, once the
+    // form is interactive again — inputs are disabled while a sign-up runs.
+    useEffect(() => {
+        if (!fieldToFocus.current || submitting) return
+        const target = fieldToFocus.current
+        fieldToFocus.current = null
+        target.current?.focus()
+    }, [focusRequest, submitting])
+
+    const focusAfterRejection = (ref) => {
+        fieldToFocus.current = ref
+        setFocusRequest((count) => count + 1)
+    }
+
+    const onChange = (e) => {
+        const {name, value} = e.target
+        setForm((prev) => ({...prev, [name]: value}))
+        setError('')
+        if (name === 'email') setEmailError('')
+        if (name === 'password') setPasswordError('')
+    }
+
+    const onEmailBlur = (e) => {
+        const value = e.target.value.trim()
+        setEmailError(
+            value && !EMAIL_PATTERN.test(value)
+                ? 'Please enter a valid email address, for example name@company.com.'
+                : ''
+        )
+    }
+
+    const goToConfirmation = (email, state) =>
+        navigate(`/verify-email?email=${encodeURIComponent(email)}`, {replace: true, state})
 
     const handleSubmit = async (e) => {
         e.preventDefault()
         setError('')
+        setEmailError('')
+        setPasswordError('')
 
         if (
             !form.fullName ||
@@ -108,34 +160,66 @@ export default function Signup() {
             setError('Full name cannot be more than 120 characters.')
             return
         }
-        if (form.password.length < 8) {
-            setError('Password must be at least 8 characters.')
+        if (!EMAIL_PATTERN.test(form.email.trim())) {
+            setEmailError('Please enter a valid email address, for example name@company.com.')
+            focusAfterRejection(emailRef)
+            return
+        }
+        if (!isPasswordValid(form.password)) {
+            setPasswordError('Please meet all of the password requirements.')
             return
         }
 
-        setSubmitting(true)
         try {
-            const gmailAccessToken = await requestGmailToken()
+            // Linking Gmail is a convenience, not a prerequisite. When Google
+            // is unavailable, misconfigured or declined, the account is still
+            // created and Gmail can be linked later from Settings.
+            setPhase('connecting')
+            let gmailAccessToken = null
+            try {
+                gmailAccessToken = await requestGmailToken()
+            } catch (gmailErr) {
+                console.warn('Gmail was not linked during sign-up:', gmailErr)
+            }
 
-            await signup({
+            setPhase('verifying')
+            const result = await signup({
                 fullName: form.fullName.trim(),
                 email: form.email.trim(),
                 password: form.password,
                 companyName: form.companyName.trim(),
                 gmailAccessToken,
             })
+
+            if (result?.verificationRequired) {
+                return goToConfirmation(result.email || form.email.trim(), {
+                    codeSent: result.codeSent !== false,
+                    notice: result.message,
+                })
+            }
             navigate('/', {replace: true})
         } catch (err) {
-            if (err?.error === 'access_denied' || err?.message?.includes('closed')) {
-                setError('Google authorization was canceled. Please approve access to create your account.')
-            } else {
+            console.error('Sign-up failed:', err)
+            const {message, field, code, email: pendingEmail} = err?.response?.data || {}
+
+            if (!err?.response) {
                 setError(
-                    err?.response?.data?.message ||
-                    'Unable to create your account. Please try again.'
+                    'We could not reach the server. Check that the backend is running and that VITE_API_URL points at it, then try again.'
                 )
+            } else if (code === 'email_not_verified') {
+                // The account is already waiting on its code: pick up there.
+                goToConfirmation(pendingEmail || form.email.trim(), {codeSent: false, notice: message})
+            } else if (field === 'email' && message) {
+                // The address was rejected: point at the field that needs fixing.
+                setEmailError(message)
+                focusAfterRejection(emailRef)
+            } else if (field === 'password' && message) {
+                setPasswordError(message)
+            } else {
+                setError(message || 'Unable to create your account. Please try again.')
             }
         } finally {
-            setSubmitting(false)
+            setPhase('idle')
         }
     }
 
@@ -176,10 +260,14 @@ export default function Signup() {
                                         icon={Mail}
                                         type="email"
                                         name="email"
+                                        inputRef={emailRef}
                                         value={form.email}
                                         onChange={onChange}
+                                        onBlur={onEmailBlur}
                                         autoComplete="email"
                                         disabled={submitting}
+                                        error={emailError}
+                                        hint="We check that this address exists before creating your account."
                                     />
                                     <Field
                                         label="Password"
@@ -190,6 +278,13 @@ export default function Signup() {
                                         onChange={onChange}
                                         autoComplete="new-password"
                                         disabled={submitting}
+                                        error={passwordError}
+                                        footer={
+                                            <PasswordChecklist
+                                                value={form.password}
+                                                highlightMissing={Boolean(passwordError)}
+                                            />
+                                        }
                                     />
                                     <Field
                                         label="Company Name"
@@ -213,7 +308,7 @@ export default function Signup() {
                                         disabled={submitting}
                                         className="w-full bg-[#253984] text-[#EAF6FF] shadow-md hover:bg-[#2A2A72]"
                                     >
-                                        {submitting ? 'Creating account…' : 'Create Your Account'}
+                                        {SUBMIT_LABELS[phase]}
                                         <ArrowRight className="h-4 w-4"/>
                                     </Button>
 
@@ -259,7 +354,15 @@ export default function Signup() {
     )
 }
 
-function Field({label, icon: Icon, name, ...inputProps}) {
+function Field({label, icon: Icon, name, error, hint, footer, inputRef, ...inputProps}) {
+    const errorId = `${name}-error`
+    const hintId = `${name}-hint`
+    const footerId = `${name}-requirements`
+    const describedBy =
+        [error ? errorId : hint ? hintId : null, footer ? footerId : null]
+            .filter(Boolean)
+            .join(' ') || undefined
+
     return (
         <div className="space-y-2">
             <Label
@@ -272,10 +375,23 @@ function Field({label, icon: Icon, name, ...inputProps}) {
             <Input
                 id={name}
                 name={name}
+                ref={inputRef}
                 required
+                aria-invalid={error ? true : undefined}
+                aria-describedby={describedBy}
                 className="h-12 rounded-xl border-slate-200 bg-slate-100 text-slate-800 focus-visible:bg-white"
                 {...inputProps}
             />
+            {error ? (
+                <p id={errorId} role="alert" className="text-sm font-medium text-red-600">
+                    {error}
+                </p>
+            ) : hint ? (
+                <p id={hintId} className="text-xs text-slate-500">
+                    {hint}
+                </p>
+            ) : null}
+            {footer ? <div id={footerId}>{footer}</div> : null}
         </div>
     )
 }

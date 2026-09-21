@@ -3,6 +3,18 @@ const bcrypt = require('bcryptjs')
 
 const ROLES = ['Admin', 'Supervisor', 'User']
 
+// Sign-up confirmation state. Server-side only: it is never serialised into
+// an API response.
+const emailVerificationSchema = new mongoose.Schema(
+    {
+        codeHash: {type: String, default: null},
+        expiresAt: {type: Date, default: null},
+        attempts: {type: Number, default: 0},
+        sentAt: {type: Date, default: null},
+    },
+    {_id: false}
+)
+
 const userSchema = new mongoose.Schema(
     {
         fullName: {
@@ -50,6 +62,17 @@ const userSchema = new mongoose.Schema(
             deleteCustomers: {type: Boolean, default: false},
             deleteRecords: {type: Boolean, default: false},
             viewAllData: {type: Boolean, default: false},
+        },
+        // Accounts start unverified and are confirmed with a code emailed to
+        // the address. Accounts that predate confirmation are backfilled as
+        // verified by scripts/backfillEmailVerified.js.
+        emailVerified: {
+            type: Boolean,
+            default: false,
+        },
+        emailVerification: {
+            type: emailVerificationSchema,
+            default: () => ({}),
         },
         authProvider: {
             type: String,
@@ -110,6 +133,7 @@ userSchema.methods.toSafeJSON = function () {
             viewAllData: Boolean(this.permissions?.viewAllData),
         },
         authProvider: this.authProvider,
+        emailVerified: Boolean(this.emailVerified),
         createdAt: this.createdAt,
         isGmailLinked: this.isGmailLinked,
         gmailAccessToken: this.gmailAccessToken,

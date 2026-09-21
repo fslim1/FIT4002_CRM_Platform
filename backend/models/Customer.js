@@ -9,8 +9,8 @@ const customerSchema = new mongoose.Schema({
   designation: { type: String, required: true },
   department: { type: String, required: true },
   companyLogo: { type: String }, // stores the file path
-  owner: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
-  team: { type: mongoose.Schema.Types.ObjectId, ref: 'Team', default: null },
+    owner: {type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null},
+    team: {type: mongoose.Schema.Types.ObjectId, ref: 'Team', default: null},
   attachments: [{
     originalName: String,
     filename: String,
@@ -22,9 +22,9 @@ const customerSchema = new mongoose.Schema({
   interactions: [{
     type: { type: String, enum: ['Email', 'Call', 'Task', 'Note'] },
     details: String,
-    date: {type: Date, default: Date.now},
-    createdBy: {type: mongoose.Schema.Types.ObjectId, ref: 'User'},
-    author: {type: String}
+      date: {type: Date, default: Date.now},
+      createdBy: {type: mongoose.Schema.Types.ObjectId, ref: 'User'},
+      author: {type: String}
   }],
   createdAt: { type: Date, default: Date.now }
 });

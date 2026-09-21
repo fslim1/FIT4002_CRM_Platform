@@ -74,7 +74,7 @@ const downloadDocument = async (req, res) => {
     // storedPath = storedPath.replace(/^app\//, "");
     // storedPath = storedPath.replace(/^\//, "");
 
-    // const fullPath = path.join(process.cwd(), storedPath);
+      // const fullPath = path.join(process.cwd(), storedPath);
 
     const filePath = path.join(__dirname, "..", document.filePath);
 

@@ -7,6 +7,8 @@ import {Input} from '@/components/ui/input'
 import {Label} from '@/components/ui/label'
 import {Card, CardContent} from '@/components/ui/card'
 import {Alert, AlertDescription} from '@/components/ui/alert'
+import PasswordChecklist from '@/components/PasswordChecklist'
+import {isPasswordValid} from '@/lib/passwordPolicy'
 import {
     hasPortalSession,
     portalLogin,
@@ -45,6 +47,10 @@ export default function PortalLogin() {
 
         if (!email || !password) {
             setError('Please enter your email and password.')
+            return
+        }
+        if (isRegister && !isPasswordValid(password)) {
+            setError('Please meet all of the password requirements.')
             return
         }
         if (isRegister && password !== confirmPassword) {
@@ -134,12 +140,7 @@ export default function PortalLogin() {
                                     required
                                     className="h-12 rounded-xl border-slate-200 bg-slate-100 text-slate-800 focus-visible:bg-white"
                                 />
-                                {isRegister && (
-                                    <p className="text-xs text-slate-500">
-                                        At least 8 characters, with an uppercase letter, a lowercase
-                                        letter and a number.
-                                    </p>
-                                )}
+                                {isRegister && <PasswordChecklist value={password}/>}
                             </div>
 
                             {isRegister && (

@@ -24,5 +24,8 @@ export const fetchAdminUsers = (params = {}) =>
 export const createUser = (payload) =>
     api.post('/admin/users', payload).then((r) => r.data)
 
+export const setUserStatus = (userId, isActive) =>
+    api.patch(`/admin/users/${userId}/status`, {isActive}).then((r) => r.data)
+
 export const deleteUser = (userId) =>
     api.delete(`/admin/users/${userId}`).then((r) => r.data)

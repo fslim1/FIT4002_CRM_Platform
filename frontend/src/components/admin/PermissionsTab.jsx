@@ -20,7 +20,7 @@ const PERMISSION_COLUMNS = [
     {
         key: 'viewAllData',
         label: 'View All Data',
-        hint: "See every team's customers and deals.",
+        hint: "See every team's customers, deals, activities and tasks.",
     },
 ];
 

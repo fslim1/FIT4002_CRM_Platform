@@ -1,6 +1,6 @@
-import { useEffect, useState } from 'react';
-import { FiClock, FiDollarSign, FiGlobe, FiHome, FiSave } from 'react-icons/fi';
-import { fetchSettings, updateSettings } from '../../api/settings';
+import {useEffect, useState} from 'react';
+import {FiClock, FiDollarSign, FiGlobe, FiHome, FiSave} from 'react-icons/fi';
+import {fetchSettings, updateSettings} from '../../api/settings';
 
 const DEFAULT_TIMEZONE = 'Asia/Kuala_Lumpur';
 const DEFAULT_CURRENCY = 'MYR';
@@ -30,7 +30,7 @@ const getTimezones = () => {
 };
 
 // Company-wide settings: company name, timezone, currency and language.
-function GeneralSettingsTab({ notify }) {
+function GeneralSettingsTab({notify}) {
     const [form, setForm] = useState({
         companyName: '',
         timezone: DEFAULT_TIMEZONE,

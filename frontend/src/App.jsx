@@ -5,6 +5,7 @@ import PortalProtectedRoute from '@/components/PortalProtectedRoute'
 import AppLayout from '@/components/AppLayout'
 import Login from '@/pages/Login'
 import Signup from '@/pages/Signup'
+import VerifyEmail from '@/pages/VerifyEmail'
 import Dashboard from '@/pages/Dashboard'
 import SalesPipeline from '@/pages/SalesPipeline'
 import Customers from "@/pages/Customers";
@@ -23,6 +24,7 @@ function App() {
                 <Routes>
                     <Route path="/login" element={<Login/>}/>
                     <Route path="/signup" element={<Signup/>}/>
+                    <Route path="/verify-email" element={<VerifyEmail/>}/>
                     <Route
                         path="/"
                         element={

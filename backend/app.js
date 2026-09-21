@@ -74,6 +74,7 @@ app.use('/api/teams', require('./routes/teamRoutes'))
 app.use('/api/settings', require('./routes/settingsRoutes'))
 app.use('/api/portal', require('./routes/portalRoutes'))
 app.use('/api/dashboard', require('./routes/dashboardRoutes'))
+app.use('/api/risk-benchmarks', require('./routes/riskBenchmarkRoutes'))
 
 // Error handlers — always last
 app.use((err, req, res, next) => {

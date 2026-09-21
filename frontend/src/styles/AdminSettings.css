@@ -20,7 +20,7 @@
     flex: 1;
     border-radius: clamp(16px, 2vw, 30px);
     padding: clamp(16px, 2vw, 28px) clamp(14px, 2vw, 24px);
-  display: flex;
+    display: flex;
     flex-direction: column;
     gap: clamp(10px, 1.4vw, 16px);
     background: rgba(255, 255, 255, 0.62);
@@ -43,28 +43,28 @@
     font-weight: 700;
     font-size: clamp(26px, 3.5vw, 45px);
     color: #232528;
-  margin: 0;
+    margin: 0;
     letter-spacing: -0.025em;
 }
 
 .admin-subtitle {
     margin: 4px 0 0 0;
     color: #555555;
-  font-size: 14px;
+    font-size: 14px;
 }
 
 /* Tabs */
 .admin-tabs {
-  display: flex;
+    display: flex;
     gap: 10px;
-  flex-wrap: wrap;
+    flex-wrap: wrap;
     flex-shrink: 0;
 }
 
 .admin-tab {
     display: inline-flex;
-  align-items: center;
-  gap: 8px;
+    align-items: center;
+    gap: 8px;
     height: 42px;
     padding: 0 22px;
     border-radius: 30px;
@@ -73,8 +73,8 @@
     color: #253984;
     font-family: "Inter", sans-serif;
     font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
+    font-weight: 500;
+    cursor: pointer;
     transition: background 0.2s, box-shadow 0.2s, transform 0.15s;
 }
 
@@ -125,12 +125,12 @@
 }
 
 .admin-card-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
     margin-bottom: 16px;
-  flex-wrap: wrap;
+    flex-wrap: wrap;
     flex-shrink: 0;
 }
 
@@ -143,7 +143,7 @@
     font-size: 18px;
     font-weight: 700;
     color: #232528;
-  margin: 0;
+    margin: 0;
     letter-spacing: -0.01em;
     display: flex;
     align-items: center;
@@ -156,20 +156,20 @@
 
 .admin-card-header .admin-card-sub {
     color: #6e6e6e;
-  font-size: 13px;
-  margin: 4px 0 0 0;
+    font-size: 13px;
+    margin: 4px 0 0 0;
     line-height: 1.5;
 }
 
 /* Feedback banners */
 .admin-feedback {
-  padding: 12px 18px;
+    padding: 12px 18px;
     border-radius: 14px;
     font-size: 13.5px;
-  font-weight: 500;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+    font-weight: 500;
+    display: flex;
+    align-items: center;
+    gap: 8px;
     flex-shrink: 0;
 }
 
@@ -181,31 +181,31 @@
 
 .admin-feedback.error {
     background: rgba(176, 32, 32, 0.1);
-  color: #a02020;
+    color: #a02020;
     border: 1px solid rgba(176, 32, 32, 0.3);
 }
 
 /* Toolbar (search + filters) */
 .admin-toolbar {
-  display: flex;
+    display: flex;
     gap: 10px;
-  align-items: center;
-  flex-wrap: wrap;
+    align-items: center;
+    flex-wrap: wrap;
     flex-shrink: 0;
 }
 
 .admin-search {
     position: relative;
-  display: flex;
-  align-items: center;
-  gap: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
     height: 42px;
     padding: 0 16px;
     border-radius: 20px;
     border: 1px solid rgba(37, 57, 132, 0.3);
     background: rgba(255, 255, 255, 0.6);
     color: #253984;
-  flex: 1;
+    flex: 1;
     min-width: 200px;
     max-width: 320px;
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
@@ -219,26 +219,26 @@
 }
 
 .admin-search input {
-  border: none;
-  background: transparent;
-  outline: none;
+    border: none;
+    background: transparent;
+    outline: none;
     font-family: "Inter", sans-serif;
-  font-size: 14px;
-  width: 100%;
+    font-size: 14px;
+    width: 100%;
     color: #232528;
 }
 
 .admin-select {
     height: 42px;
     padding: 0 14px;
-  border-radius: 20px;
+    border-radius: 20px;
     border: 1px solid rgba(37, 57, 132, 0.3);
     background: rgba(255, 255, 255, 0.6);
     font-family: "Inter", sans-serif;
-  font-size: 14px;
+    font-size: 14px;
     color: #232528;
-  outline: none;
-  cursor: pointer;
+    outline: none;
+    cursor: pointer;
     transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
 }
 
@@ -254,7 +254,7 @@
 
 .admin-select:disabled {
     opacity: 0.5;
-  cursor: not-allowed;
+    cursor: not-allowed;
 }
 
 /* Compact select used inside dense table rows */
@@ -266,9 +266,9 @@
 }
 
 .admin-count {
-  font-size: 13px;
+    font-size: 13px;
     color: #555555;
-  margin-left: auto;
+    margin-left: auto;
     display: inline-flex;
     align-items: center;
     gap: 6px;
@@ -291,20 +291,20 @@
 }
 
 .admin-table {
-  width: 100%;
-  border-collapse: collapse;
+    width: 100%;
+    border-collapse: collapse;
     min-width: 720px;
 }
 
 .admin-table th {
     background: rgba(37, 57, 132, 0.08);
     color: #253984;
-  text-align: left;
+    text-align: left;
     padding: 14px 20px;
     font-family: "Inter", sans-serif;
     font-weight: 600;
     font-size: 13.5px;
-  white-space: nowrap;
+    white-space: nowrap;
     border-bottom: 1px solid rgba(37, 57, 132, 0.15);
     position: sticky;
     top: 0;
@@ -316,9 +316,9 @@
 .admin-table td {
     padding: 12px 20px;
     border-bottom: 1px solid rgba(37, 57, 132, 0.08);
-  vertical-align: middle;
+    vertical-align: middle;
     font-family: "Inter", sans-serif;
-  font-size: 14px;
+    font-size: 14px;
     color: #232528;
 }
 
@@ -327,7 +327,7 @@
 }
 
 .admin-empty {
-  text-align: center;
+    text-align: center;
     padding: 30px 20px;
     color: #6e6e6e;
     font-size: 14px;
@@ -335,45 +335,45 @@
 
 /* User cell */
 .admin-user-cell {
-  display: flex;
-  align-items: center;
-  gap: 12px;
+    display: flex;
+    align-items: center;
+    gap: 12px;
 }
 
 .admin-avatar {
-  width: 38px;
-  height: 38px;
-  min-width: 38px;
-  border-radius: 50%;
+    width: 38px;
+    height: 38px;
+    min-width: 38px;
+    border-radius: 50%;
     background: rgba(37, 57, 132, 0.1);
     color: #253984;
     border: 1px solid rgba(37, 57, 132, 0.2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     font-family: "Inter", sans-serif;
     font-weight: 600;
     font-size: 13px;
-  text-transform: uppercase;
+    text-transform: uppercase;
 }
 
 .admin-user-name {
-  font-weight: 600;
+    font-weight: 600;
     color: #232528;
-  display: block;
+    display: block;
 }
 
 .admin-user-email {
-  font-size: 12px;
+    font-size: 12px;
     color: #6e6e6e;
-  display: block;
+    display: block;
 }
 
 .admin-you-badge {
-  display: inline-block;
-  margin-left: 8px;
-  padding: 2px 8px;
-  border-radius: 10px;
+    display: inline-block;
+    margin-left: 8px;
+    padding: 2px 8px;
+    border-radius: 10px;
     background: rgba(37, 57, 132, 0.12);
     color: #253984;
     font-size: 10.5px;
@@ -387,19 +387,19 @@
     align-items: center;
     padding: 4px 12px;
     border-radius: 12px;
-  font-size: 12px;
+    font-size: 12px;
     font-weight: 600;
     font-family: "Inter", sans-serif;
 }
 
 .admin-role-badge.role-admin {
     background: rgba(176, 32, 32, 0.12);
-  color: #a02020;
+    color: #a02020;
 }
 
 .admin-role-badge.role-supervisor {
     background: rgba(37, 57, 132, 0.12);
-  color: #253984;
+    color: #253984;
 }
 
 .admin-role-badge.role-user {
@@ -411,17 +411,17 @@
 .admin-btn {
     background: linear-gradient(135deg, #253984 0%, #2a2a72 100%);
     color: #eaf6ff;
-  border: none;
+    border: none;
     border-radius: 30px;
     height: 42px;
     padding: 0 22px;
     font-family: "Inter", sans-serif;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
+    font-size: 14px;
+    font-weight: 500;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
     letter-spacing: 0.01em;
     box-shadow: 0 4px 14px rgba(37, 57, 132, 0.45);
     transition: box-shadow 0.2s, transform 0.15s, opacity 0.2s;
@@ -438,7 +438,7 @@
 
 .admin-btn:disabled {
     opacity: 0.45;
-  cursor: not-allowed;
+    cursor: not-allowed;
     box-shadow: none;
 }
 
@@ -462,7 +462,7 @@
 .admin-btn.danger {
     background: rgba(176, 32, 32, 0.08);
     border: 1px solid rgba(176, 32, 32, 0.28);
-  color: #a02020;
+    color: #a02020;
     box-shadow: none;
     height: 36px;
     padding: 0 16px;
@@ -477,16 +477,16 @@
 }
 
 .admin-icon-btn {
-  background: transparent;
-  border: none;
+    background: transparent;
+    border: none;
     color: #6e6e6e;
-  cursor: pointer;
-  padding: 6px;
-  border-radius: 8px;
-  display: inline-flex;
-  align-items: center;
+    cursor: pointer;
+    padding: 6px;
+    border-radius: 8px;
+    display: inline-flex;
+    align-items: center;
     transition: background 0.2s, color 0.2s;
-  font-size: 15px;
+    font-size: 15px;
 }
 
 .admin-icon-btn:hover {
@@ -496,28 +496,28 @@
 
 /* Forms */
 .admin-form-grid {
-  display: grid;
+    display: grid;
     grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
     gap: 18px;
-  margin-bottom: 22px;
+    margin-bottom: 22px;
 }
 
 .admin-form-group {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
 }
 
 .admin-form-group label {
     font-family: "Inter", sans-serif;
     font-size: 12px;
-  font-weight: 700;
+    font-weight: 700;
     color: #253984;
     letter-spacing: 0.02em;
     text-transform: uppercase;
-  display: flex;
-  align-items: center;
-  gap: 6px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .admin-form-group input,
@@ -526,9 +526,9 @@
     padding: 0 16px;
     border-radius: 12px;
     border: 1px solid rgba(37, 57, 132, 0.22);
-  outline: none;
+    outline: none;
     font-family: "Inter", sans-serif;
-  font-size: 14px;
+    font-size: 14px;
     background: rgba(255, 255, 255, 0.8);
     color: #232528;
     transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
@@ -542,23 +542,23 @@
 }
 
 .admin-inline-form {
-  display: flex;
+    display: flex;
     gap: 10px;
-  align-items: center;
-  flex-wrap: wrap;
+    align-items: center;
+    flex-wrap: wrap;
 }
 
 .admin-inline-form input {
     height: 42px;
     padding: 0 18px;
-  border-radius: 20px;
+    border-radius: 20px;
     border: 1px solid rgba(37, 57, 132, 0.3);
-  outline: none;
+    outline: none;
     font-family: "Inter", sans-serif;
-  font-size: 14px;
+    font-size: 14px;
     background: rgba(255, 255, 255, 0.6);
     color: #232528;
-  min-width: 240px;
+    min-width: 240px;
     transition: border-color 0.2s, box-shadow 0.2s, background-color 0.2s;
 }
 
@@ -570,39 +570,39 @@
 
 /* Toggle switch */
 .admin-switch {
-  position: relative;
-  display: inline-block;
+    position: relative;
+    display: inline-block;
     width: 44px;
     height: 24px;
-  flex-shrink: 0;
+    flex-shrink: 0;
 }
 
 .admin-switch input {
-  opacity: 0;
-  width: 0;
-  height: 0;
+    opacity: 0;
+    width: 0;
+    height: 0;
 }
 
 .admin-switch .slider {
-  position: absolute;
-  cursor: pointer;
-  inset: 0;
+    position: absolute;
+    cursor: pointer;
+    inset: 0;
     background: rgba(37, 57, 132, 0.2);
     border-radius: 24px;
     transition: background 0.2s;
 }
 
 .admin-switch .slider:before {
-  position: absolute;
-  content: "";
+    position: absolute;
+    content: "";
     height: 18px;
     width: 18px;
-  left: 3px;
-  bottom: 3px;
+    left: 3px;
+    bottom: 3px;
     background: #ffffff;
-  border-radius: 50%;
+    border-radius: 50%;
     transition: transform 0.2s;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.25);
 }
 
 .admin-switch input:checked + .slider {
@@ -611,7 +611,7 @@
 }
 
 .admin-switch input:checked + .slider:before {
-  transform: translateX(20px);
+    transform: translateX(20px);
 }
 
 .admin-switch input:focus-visible + .slider {
@@ -620,18 +620,18 @@
 
 .admin-switch input:disabled + .slider {
     opacity: 0.45;
-  cursor: not-allowed;
+    cursor: not-allowed;
 }
 
 .admin-sharing-cell {
-  display: flex;
-  align-items: center;
-  gap: 10px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
 }
 
 .admin-sharing-state {
-  font-size: 12px;
-  font-weight: 700;
+    font-size: 12px;
+    font-weight: 700;
     font-family: "Inter", sans-serif;
 }
 
@@ -645,9 +645,9 @@
 
 /* Inline team rename */
 .admin-rename-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .admin-rename-row input {
@@ -655,9 +655,9 @@
     padding: 0 12px;
     border-radius: 10px;
     border: 1px solid rgba(37, 57, 132, 0.35);
-  outline: none;
+    outline: none;
     font-family: "Inter", sans-serif;
-  font-size: 14px;
+    font-size: 14px;
     background: #ffffff;
     color: #232528;
 }
@@ -668,11 +668,11 @@
 }
 
 .admin-team-name {
-  font-weight: 600;
+    font-weight: 600;
     color: #232528;
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
 }
 
 .admin-supervises-hint {
@@ -685,15 +685,15 @@
 
 /* Confirm modal */
 .admin-modal-overlay {
-  position: fixed;
-  inset: 0;
+    position: fixed;
+    inset: 0;
     background: rgba(20, 21, 50, 0.5);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 1000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
 }
 
 .admin-modal {
@@ -701,46 +701,46 @@
     backdrop-filter: blur(20px);
     -webkit-backdrop-filter: blur(20px);
     border: 1px solid rgba(255, 255, 255, 0.6);
-  border-radius: 20px;
+    border-radius: 20px;
     padding: 28px;
     width: 430px;
-  max-width: calc(100vw - 40px);
+    max-width: calc(100vw - 40px);
     box-shadow: 0 28px 72px rgba(0, 0, 0, 0.3);
 }
 
 .admin-modal h3 {
     font-family: "Inter", sans-serif;
-  margin: 0 0 12px 0;
+    margin: 0 0 12px 0;
     color: #232528;
-  font-size: 20px;
+    font-size: 20px;
     font-weight: 700;
     letter-spacing: -0.01em;
 }
 
 .admin-modal p {
     color: #555555;
-  font-size: 14px;
-  margin: 0 0 22px 0;
+    font-size: 14px;
+    margin: 0 0 22px 0;
     line-height: 1.55;
 }
 
 .admin-modal-actions {
-  display: flex;
-  justify-content: flex-end;
-  gap: 10px;
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
 }
 
 .admin-modal .confirm-delete-btn {
-  background: linear-gradient(135deg, #7b1a1a 0%, #a02020 100%);
+    background: linear-gradient(135deg, #7b1a1a 0%, #a02020 100%);
     color: #ffffff;
-  border: none;
+    border: none;
     height: 40px;
     padding: 0 22px;
     border-radius: 30px;
     font-family: "Inter", sans-serif;
-  font-size: 14px;
-  font-weight: 600;
-  cursor: pointer;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
     box-shadow: 0 4px 14px rgba(160, 32, 32, 0.35);
     transition: box-shadow 0.2s, transform 0.15s;
 }
@@ -753,8 +753,8 @@
 /* Loading text */
 .admin-loading {
     color: #555555;
-  font-size: 14px;
-  padding: 20px 0;
+    font-size: 14px;
+    padding: 20px 0;
     font-family: "Inter", sans-serif;
 }
 
