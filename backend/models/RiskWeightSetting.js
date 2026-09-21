@@ -1,10 +1,10 @@
 const mongoose = require('mongoose')
 
-// Flexible per-company configuration for anything that doesn't fit
-// RiskBenchmark's fixed shape — e.g. inactivity thresholds, overdue-task
-// rulesets (client's Sections 2 and 3). `key` names the setting; `value`
-// holds whatever shape that setting needs, refined as later stories define
-// each ruleset. companyKey scoping is already correct from day one.
+// Flexible per-company scoring configuration. `key` names which setting this
+// is (see services/defaultRiskWeights.js for the known keys and shapes);
+// `value` holds whatever shape that particular setting needs. Scoped by
+// companyKey exactly like RiskBenchmark, so one company's weights can never
+// affect another's (same guarantee H1 established).
 const riskWeightSettingSchema = new mongoose.Schema(
     {
         companyKey: {type: String, required: true, trim: true, lowercase: true, index: true},
