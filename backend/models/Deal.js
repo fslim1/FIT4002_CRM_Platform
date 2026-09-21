@@ -25,4 +25,8 @@ const dealSchema = new mongoose.Schema({
   statusLogs: [statusLogSchema]
 }, { timestamps: true })
 
+// Deals are scoped on createdBy everywhere in the CRM, including the
+// relationship graph's account query.
+dealSchema.index({createdBy: 1})
+
 module.exports = mongoose.model('Deal', dealSchema)

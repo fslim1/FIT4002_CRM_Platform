@@ -2,6 +2,14 @@
 @import "tw-animate-css";
 @import "shadcn/tailwind.css";
 @import "@fontsource-variable/geist";
+/* Inter, self-hosted. The stylesheets throughout the app ask for "Inter", and
+   these are the weights they use. Previously fetched from Google Fonts on every
+   page load, which sent the viewer's address to a third party for a font the
+   application can serve itself. */
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/500.css";
+@import "@fontsource/inter/600.css";
+@import "@fontsource/inter/700.css";
 
 @custom-variant dark (&:is(.dark *));
 

@@ -29,4 +29,10 @@ const customerSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now }
 });
 
+// Indexes for the relationship graph's account query. The scope filter
+// (owner / team) runs first and is the clause that can actually use an index;
+// the company match is case-insensitive and computed, so it cannot.
+customerSchema.index({owner: 1});
+customerSchema.index({team: 1});
+
 module.exports = mongoose.model('Customer', customerSchema);

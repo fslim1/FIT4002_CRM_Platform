@@ -108,7 +108,6 @@ router.get('/logs', requireAuth, async (req, res) => {
 })
 
 
-
 // CREATE deal
 // CREATE deal
 router.post('/', requireAuth, requireRole('User', 'Admin'), async (req, res) => {

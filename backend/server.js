@@ -1,36 +1,12 @@
-const express = require('express')
 const mongoose = require('mongoose')
 const dotenv = require('dotenv')
-const cors = require('cors')
-const helmet = require('helmet')
-const path = require("path");
 
 dotenv.config()
 
-const authRoutes = require('./routes/auth')
-
-const app = express()
-
-app.set('trust proxy', 1)
-
-app.use(helmet())
-
-const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173')
-    .split(',')
-    .map((o) => o.trim())
-    .filter(Boolean)
-
-app.use(
-    cors({
-        origin: (origin, cb) => {
-            if (!origin || allowedOrigins.includes(origin)) return cb(null, true)
-            return cb(new Error('Origin not allowed by CORS'))
-        },
-        credentials: true,
-    })
-)
-
-app.use(express.json({ limit: '100kb' }))
+// The Express app is built in app.js so it can be imported by tests without
+// binding a port. This file is the process entry point: it owns the database
+// connection and the listener.
+const app = require('./app')
 
 if (process.env.MONGO_URI) {
     mongoose
@@ -40,42 +16,6 @@ if (process.env.MONGO_URI) {
 } else {
     console.warn('MONGO_URI not set; database features are disabled')
 }
-
-// Serve uploads statically
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')))
-
-app.get('/', (req, res) => {
-    res.send('NexGen CRM backend is running')
-})
-
-// Routes — all must be registered before error handlers
-app.use('/api/auth', authRoutes)
-app.use('/api/admin', require('./routes/adminRoutes'))
-app.use('/api/customers', require('./routes/customerRoutes'))
-app.use('/api/interactions', require('./routes/interactionRoutes'))
-app.use('/api/deals', require('./routes/dealRoutes'))
-app.use('/api/tasks', require('./routes/taskRoutes'))
-app.use('/api/notifications', require('./routes/notificationsRoutes'))
-app.use('/api/users', require('./routes/userRoutes'))
-app.use('/api/teams', require('./routes/teamRoutes'))
-app.use('/api/settings', require('./routes/settingsRoutes'))
-app.use('/api/portal', require('./routes/portalRoutes'))
-app.use('/api/dashboard', require('./routes/dashboardRoutes'))
-app.use('/api/risk-benchmarks', require('./routes/riskBenchmarkRoutes'))
-
-// Error handlers — always last
-app.use((err, req, res, next) => {
-    if (err) {
-        res.status(400).json({ message: err.message })
-    } else {
-        next()
-    }
-})
-
-app.use((err, req, res, _next) => {
-    console.error('Unhandled error:', err)
-    res.status(500).json({ message: 'Internal server error' })
-})
 
 const PORT = process.env.PORT || 5001
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`))

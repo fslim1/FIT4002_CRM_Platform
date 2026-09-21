@@ -19,10 +19,26 @@ import {
     FiUpload,
     FiUser,
     FiX,
-    FiTrash2
+    FiTrash2,
+    FiShare2
 } from "react-icons/fi";
 import {FaWhatsapp} from "react-icons/fa";
 import {generateWhatsAppUrl} from "../lib/phoneUtils";
+import RelationshipGraphPanel from "../components/RelationshipGraphPanel";
+
+// The graph library is a lazily-loaded chunk. Warming it when the trigger is
+// hovered or focused keeps the first open responsive on a slow connection. Fires at most once per page load, and never for someone who
+// does not go near the button.
+let graphLibraryPrefetched = false;
+const prefetchGraphLibrary = () => {
+    if (graphLibraryPrefetched) return;
+    graphLibraryPrefetched = true;
+    import("cytoscape").catch(() => {
+        // A failed warm-up is not an error: the real import inside the panel
+        // reports properly if the chunk genuinely cannot be fetched.
+        graphLibraryPrefetched = false;
+    });
+};
 
 const ProfileLogo = ({companyLogo, companyName}) => {
     const [imgError, setImgError] = useState(false);
@@ -93,6 +109,10 @@ function CustomerProfile() {
     const [visibleCount, setVisibleCount] = useState(5);
 
     const [documents, setDocuments] = useState([]);
+
+    // Panel visibility is local state only: closing it returns to the profile
+    // without a route change or a refetch.
+    const [graphOpen, setGraphOpen] = useState(false);
 
     //GET Request: Load timeline from MongoDB using Axios instance
     const mapBackendInteractionToMyUI = (interaction) => ({
@@ -468,6 +488,14 @@ function CustomerProfile() {
     });
 
     const visibleInteractions = filteredInteractions.slice(0, visibleCount);
+
+    // mapBackendInteractionToMyUI stores the id as `_id`, and every other
+    // reference to selectedInteraction uses `_id` too. The row below used to
+    // read `.id`, which is always undefined: React saw a list of undefined keys
+    // and the active-item highlight could never match.
+    const selectedId = selectedInteraction
+        ? selectedInteraction._id || selectedInteraction.id
+        : null;
     const hasMoreInteractions = visibleCount < filteredInteractions.length;
 
     // Calculate dynamic stats
@@ -503,6 +531,17 @@ function CustomerProfile() {
                     </Link>
                     <h1>Customer Profile</h1>
                 </div>
+
+                <button
+                    type="button"
+                    className="relationship-graph-btn"
+                    onClick={() => setGraphOpen(true)}
+                    onMouseEnter={prefetchGraphLibrary}
+                    onFocus={prefetchGraphLibrary}
+                >
+                    <FiShare2 aria-hidden="true"/>
+                    Relationship Graph
+                </button>
             </div>
 
             <div className="customer-profile-container">
@@ -722,15 +761,20 @@ function CustomerProfile() {
 
                             <div className="interactions-content-layout">
                                 <div className="interactions-list">
-                                    {visibleInteractions.map((item) => {
+                                    {visibleInteractions.map((item, index) => {
                                         const config = getStyleConfig(item.type);
 
                                         const itemId = item._id || item.id;
+                                        // Comparing two undefined ids would mark
+                                        // every row as selected, so a row with no
+                                        // id of its own never matches.
+                                        const isSelected =
+                                            itemId != null && selectedId === itemId;
 
                                         return (
                                             <div
-                                                className={`interaction-item clickable ${selectedInteraction?.id === itemId ? "active-item" : ""}`}
-                                                key={item.id}
+                                                className={`interaction-item clickable ${isSelected ? "active-item" : ""}`}
+                                                key={itemId ?? `interaction-${index}`}
                                                 onClick={() => setSelectedInteraction(item)} // 4. CLICK TO OPEN MODAL
                                             >
                                                 {/* Uses the generated icon background wrapper style */}
@@ -1045,6 +1089,14 @@ function CustomerProfile() {
                         </div>
                     </div>
                 </div>
+            )}
+
+            {graphOpen && (
+                <RelationshipGraphPanel
+                    customerId={id}
+                    customerName={customer.fullName}
+                    onClose={() => setGraphOpen(false)}
+                />
             )}
         </div>
     );
