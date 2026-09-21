@@ -40,7 +40,7 @@ const signupUser = async (overrides = {}) => {
     const body = {
         fullName: 'Deal Tester',
         email: uniqueEmail(),
-        password: 'password123',
+        password: 'Password123',
         companyName: 'DealCo',
         ...overrides,
     }

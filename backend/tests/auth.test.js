@@ -24,6 +24,9 @@
  *    - 200  always public; returns googleClientId field
  */
 
+
+
+
 const request = require('supertest')
 const mongoose = require('mongoose')
 const app = require('../app')
@@ -34,7 +37,7 @@ const User = require('../models/User')
 const BASE_USER = {
     fullName: 'Test User',
     email: 'testuser@example.com',
-    password: 'password123',
+    password: 'Password123',
     companyName: 'Test Co',
 }
 
@@ -56,6 +59,7 @@ beforeEach(async () => {
 describe('POST /api/auth/signup', () => {
     it('201 — creates a user and returns a JWT + safe user object', async () => {
         const res = await signup(BASE_USER)
+        if (res.status !== 201) console.log('SIGNUP ERROR:', res.body)
         expect(res.status).toBe(201)
         expect(res.body.token).toBeTruthy()
         expect(res.body.user).toBeDefined()
@@ -136,7 +140,7 @@ describe('POST /api/auth/login', () => {
     })
 
     it('401 — unknown email returns 401', async () => {
-        const res = await login({ email: 'nobody@example.com', password: 'password123' })
+        const res = await login({ email: 'nobody@example.com', password: 'Password123' })
         expect(res.status).toBe(401)
         expect(res.body.message).toBeTruthy()
     })
@@ -185,5 +189,86 @@ describe('GET /api/auth/config', () => {
         expect(res.status).toBe(200)
         // The field must exist; value may be null if GOOGLE_CLIENT_ID is not set in test env
         expect(Object.prototype.hasOwnProperty.call(res.body, 'googleClientId')).toBe(true)
+    })
+})
+// ─── Email Confirmation ────────────────────────────────────────────────────────
+
+describe('Email Confirmation Flow', () => {
+    let originalEnv
+
+    beforeAll(() => {
+        originalEnv = process.env.SIGNUP_EMAIL_CONFIRMATION
+        process.env.SIGNUP_EMAIL_CONFIRMATION = 'on'
+    })
+
+    afterAll(() => {
+        process.env.SIGNUP_EMAIL_CONFIRMATION = originalEnv
+    })
+
+    beforeEach(() => {
+        global.__LAST_SENT_CODE = null
+    })
+
+    it('POST /api/auth/signup stops at confirmation when enabled', async () => {
+        const res = await signup(BASE_USER)
+        expect(res.status).toBe(201)
+        expect(res.body.verificationRequired).toBe(true)
+        expect(res.body.codeSent).toBe(true)
+        expect(global.__LAST_SENT_CODE).toBeTruthy()
+    })
+
+    it('POST /api/auth/login is blocked before verification', async () => {
+        await signup(BASE_USER)
+        const res = await login({ email: BASE_USER.email, password: BASE_USER.password })
+        expect(res.status).toBe(403)
+        expect(res.body.code).toBe('email_not_verified')
+    })
+
+    it('POST /api/auth/verify-email validates code and logs in user', async () => {
+        await signup(BASE_USER)
+        
+        // 400 - missing code
+        let res = await request(app).post('/api/auth/verify-email').send({ email: BASE_USER.email })
+        expect(res.status).toBe(400)
+
+        // 400 - invalid format
+        res = await request(app).post('/api/auth/verify-email').send({ email: BASE_USER.email, code: '123' })
+        expect(res.status).toBe(400)
+
+        // 400 - mismatched code
+        res = await request(app).post('/api/auth/verify-email').send({ email: BASE_USER.email, code: '000000' })
+        expect(res.status).toBe(400)
+        expect(res.body.code).toBe('mismatch')
+
+        // 200 - valid code
+        res = await request(app).post('/api/auth/verify-email').send({ email: BASE_USER.email, code: global.__LAST_SENT_CODE })
+        expect(res.status).toBe(200)
+        expect(res.body.token).toBeTruthy()
+
+        // subsequent login should work
+        const loginRes = await login({ email: BASE_USER.email, password: BASE_USER.password })
+        expect(loginRes.status).toBe(200)
+    })
+
+    it('POST /api/auth/resend-verification resends code and respects cooldown', async () => {
+        await signup(BASE_USER)
+        const firstCode = global.__LAST_SENT_CODE
+        global.__LAST_SENT_CODE = null
+
+        // 429 - cooldown active
+        let res = await request(app).post('/api/auth/resend-verification').send({ email: BASE_USER.email })
+        expect(res.status).toBe(429)
+
+        // bypass cooldown by updating DB
+        await User.findOneAndUpdate(
+            { email: BASE_USER.email },
+            { $set: { 'emailVerification.sentAt': new Date('2000-01-01T00:00:00Z') } }
+        )
+
+        // 200 - resend succeeds
+        res = await request(app).post('/api/auth/resend-verification').set('X-Forwarded-For', '1.2.3.4').send({ email: BASE_USER.email })
+        expect(res.status).toBe(200)
+        expect(res.body.codeSent).toBe(true)
+        expect(global.__LAST_SENT_CODE).not.toBe(firstCode)
     })
 })

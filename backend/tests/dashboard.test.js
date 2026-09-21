@@ -36,7 +36,7 @@ const signupUser = async (overrides = {}) => {
     const res = await request(app).post('/api/auth/signup').send({
         fullName: 'Dashboard Tester',
         email: ue(),
-        password: 'password123',
+        password: 'Password123',
         companyName: 'DashCo',
         ...overrides,
     })

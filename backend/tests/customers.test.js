@@ -46,7 +46,7 @@ const signupAndLogin = async (seed = {}) => {
     const userData = {
         fullName: 'Customer Tester',
         email: `tester_${Date.now()}@example.com`,
-        password: 'password123',
+        password: 'Password123',
         companyName: 'Test Co',
         ...seed,
     }

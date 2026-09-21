@@ -13,7 +13,7 @@ We added a suite of backend API and integration tests using **Vitest** and **Sup
 
 ## Current Test Suite
 
-The backend currently has 9 automated test files:
+The backend currently has 11 automated test files:
 
 - `health.test.js`
 - `auth.test.js`
@@ -24,11 +24,13 @@ The backend currently has 9 automated test files:
 - `notifications.test.js`
 - `dashboard.test.js`
 - `gmail.test.js`
+- `risk.test.js`
+- `settings.test.js`
 
 Current verified result:
 
-- 9/9 test files passed
-- 119/119 tests passed
+- 11/11 test files passed
+- 138/138 tests passed
 - 0 failed
 
 ## Feature Coverage
@@ -45,6 +47,14 @@ Our automated tests currently cover the following backend areas:
 - Rejects invalid credentials
 - Verifies JWT protection on secure routes
 - Checks input validation
+- Email Confirmation / Verification:
+  - Signup requiring email confirmation when confirmation mode is enabled
+  - Login blocked before verification
+  - Missing/invalid verification code handling
+  - Successful verification with a valid code
+  - Resend-verification behaviour
+  - Resend cooldown behaviour
+  - *Note: Real SMTP emails are NOT sent during tests (the mailer is mocked in the test environment). Real DNS/MX verification remains mocked to keep tests isolated from external network services.*
 
 **Customers**
 - Creating and retrieving customers
@@ -61,12 +71,13 @@ Our automated tests currently cover the following backend areas:
 - Verifies who is allowed to delete deals
 - Admin access rules and overrides
 
-**teamScope**
-- Unit tests for the data visibility rules (`seesEverything`, `getVisibleDealFilter`, `canAccessDeal`, `getCompanyUserIds`)
+**teamScope / companyScope**
+- Tests core data visibility and company isolation rules
+- Unit tests for `seesEverything`, `getVisibleDealFilter`, `canAccessDeal`, and `getCompanyUserIds`
 
 **Interactions**
 - Retrieving interactions for a customer
-- Documents the current interaction creation behaviour, including the current 400 validation failure
+- Documents the current interaction creation behaviour, where creation returns 400 because the required `time` field is not currently saved by the controller
 - Verifies interaction update and delete behaviours
 - Permission rules for deleting interactions
 
@@ -90,6 +101,22 @@ Our automated tests currently cover the following backend areas:
 - Gmail is not covered by a real external integration test because sending mail requires live Google OAuth credentials and external Gmail API access.
 - The automated test suite does not send any real emails or make live Gmail API calls.
 - Full Gmail integration testing remains a limitation of the current test suite.
+
+**Risk Assessment / Risk Benchmarks**
+- Unit tests for `riskFactors.js` (`getDaysInStage`, `getDaysSinceActivity`, `getOverdueTaskCount`)
+- Unauthenticated access handling to risk benchmark routes
+- Regular User read access
+- Admin create/update/delete permissions
+- Duplicate benchmark validation
+- Company-scoped benchmark behaviour where applicable
+
+**Settings**
+- Unauthenticated access handling
+- Regular User read access
+- Regular User blocked from updating settings
+- Admin update access
+- Timezone/currency/language updates
+- Duplicate `companyName` conflict handling
 
 ## Important Current Backend Behaviours Discovered
 
@@ -121,8 +148,8 @@ Whenever you are reviewing a PR or checking your own work, follow these exact st
    ```
 
 **Expected Result:**
-- 9 test files passed
-- 119 tests passed
+- 11 test files passed
+- 138 tests passed
 - 0 failed
 
 If any test fails, investigate the failure before merging. A failure may indicate a regression, an intentional behaviour change, or an outdated test expectation.
@@ -139,17 +166,20 @@ If any test fails, investigate the failure before merging. A failure may indicat
 ## What is NOT Covered
 
 The following areas are currently not covered by this automated suite:
-- Task permission tests
+- Task routes and permission tests
 - Team Management tests
 - Frontend UI tests
 - File upload/multipart tests
 - Portal routes
 - Real Gmail API integration
+- Live SMTP delivery
+- Real DNS/MX email verification
+- Live Google OAuth integration
 
 ## Before Merge Checklist
 
 - [ ] `npm install` completed successfully
 - [ ] `npm test` passes
-- [ ] 119/119 tests pass
+- [ ] 138/138 tests pass
 - [ ] `npm run dev` starts successfully
 - [ ] No unexpected test failures or backend startup errors are observed
