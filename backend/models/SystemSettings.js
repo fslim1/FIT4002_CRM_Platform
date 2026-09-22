@@ -5,6 +5,12 @@ const mongoose = require('mongoose')
 // never change another company's configuration.
 const systemSettingsSchema = new mongoose.Schema(
     {
+        companyId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Company',
+            index: true,
+            sparse: true,
+        },
         // Normalized (lowercased) company name this document belongs to.
         companyKey: {
             type: String,
@@ -43,24 +49,46 @@ const systemSettingsSchema = new mongoose.Schema(
     {timestamps: true}
 )
 
-// Returns (creating if needed) the settings document for a company. The very
-// first company to read settings adopts the legacy pre-multi-company
-// singleton, so configuration saved before company scoping is preserved.
-systemSettingsSchema.statics.getForCompany = async function (companyName) {
-    const name = (companyName || '').trim()
+// Returns (creating if needed) the settings document for a company.
+systemSettingsSchema.statics.getForCompany = async function (userOrName, companyIdArg) {
+    let name = ''
+    let companyId = companyIdArg || null
+
+    if (userOrName && typeof userOrName === 'object') {
+        name = (userOrName.companyName || '').trim()
+        companyId = userOrName.companyId || companyId
+    } else if (typeof userOrName === 'string') {
+        name = userOrName.trim()
+    }
     const key = name.toLowerCase()
 
-    let doc = await this.findOne({companyKey: key})
-    if (doc) return doc
+    let doc = null
+    if (companyId) {
+        doc = await this.findOne({companyId})
+    }
+    if (!doc && key) {
+        doc = await this.findOne({companyKey: key})
+    }
+    if (doc) {
+        if (companyId && !doc.companyId) {
+            doc.companyId = companyId
+            await doc.save()
+        }
+        return doc
+    }
 
     doc = await this.findOneAndUpdate(
-        {companyKey: null},
-        {companyKey: key, ...(name ? {companyName: name} : {})},
+        {companyKey: null, companyId: null},
+        {companyKey: key || null, companyId, ...(name ? {companyName: name} : {})},
         {new: true}
     )
     if (doc) return doc
 
-    return this.create({companyKey: key, companyName: name || 'NexGen CRM'})
+    return this.create({
+        companyId,
+        companyKey: key || null,
+        companyName: name || 'NexGen CRM',
+    })
 }
 
 module.exports = mongoose.model('SystemSettings', systemSettingsSchema)

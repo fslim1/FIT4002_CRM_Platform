@@ -39,6 +39,11 @@ const userSchema = new mongoose.Schema(
             minlength: 8,
             select: false,
         },
+        companyId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Company',
+            index: true,
+        },
         companyName: {
             type: String,
             required: [true, 'Company name is required'],
@@ -124,6 +129,7 @@ userSchema.methods.toSafeJSON = function () {
         id: this._id,
         fullName: this.fullName,
         email: this.email,
+        companyId: this.companyId || null,
         companyName: this.companyName,
         role: this.role,
         team,

@@ -11,6 +11,12 @@ const teamSchema = new mongoose.Schema(
         // Company the team belongs to (matched case-insensitively). Team names
         // are unique within a company (enforced in the routes); legacy teams
         // without a company stay visible to every admin.
+        companyId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: 'Company',
+            default: null,
+            index: true,
+        },
         company: {
             type: String,
             trim: true,
