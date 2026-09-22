@@ -36,12 +36,27 @@ const countMembers = async (teamIds) => {
 
 // Teams the admin can manage: their own company's, plus legacy teams created
 // before company scoping existed.
-const companyTeamFilter = (user) => ({
-    $or: [{company: companyPattern(user.companyName)}, {company: null}],
-})
+const companyTeamFilter = (user) => {
+    if (user && user.companyId) {
+        return {
+            $or: [
+                {companyId: user.companyId},
+                {company: companyPattern(user.companyName)},
+                {company: null, companyId: null},
+            ],
+        }
+    }
+    return {$or: [{company: companyPattern(user?.companyName)}, {company: null}]}
+}
 
-const canManageTeam = (user, team) =>
-    !team.company || sameCompanyName(team.company, user.companyName)
+const canManageTeam = (user, team) => {
+    if (!team) return false
+    if (!team.companyId && !team.company) return true
+    if (user && user.companyId && team.companyId) {
+        return String(user.companyId) === String(team.companyId)
+    }
+    return sameCompanyName(team.company, user?.companyName)
+}
 
 // Loads a team for a mutation; other companies' teams read as not found.
 const findManagedTeam = async (req, res) => {
@@ -128,7 +143,11 @@ router.post('/', requireAuth, requireRole('Admin'), async (req, res) => {
             return res.status(409).json({message: 'A team with this name already exists'})
         }
 
-        const team = await Team.create({name, company: req.user.companyName})
+        const team = await Team.create({
+            name,
+            companyId: req.user.companyId,
+            company: req.user.companyName,
+        })
         return res.status(201).json({team: serializeTeam(team, 0)})
     } catch (err) {
         console.error('Create team error:', err)
