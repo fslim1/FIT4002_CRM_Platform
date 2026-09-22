@@ -13,15 +13,25 @@ const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
 const serializeUser = (user) => user.toSafeJSON()
 
-// Admins manage only their own company's people. Company names are matched
-// case-insensitively so "NexGen" and "nexgen" are treated as one company.
-const sameCompanyFilter = (user) => ({
-    companyName: new RegExp(`^${escapeRegex(user.companyName || '')}$`, 'i'),
-})
+// Admins manage only their own company's people, strictly scoped by companyId.
+const companyIdFilter = (user) => {
+    if (user && user.companyId) {
+        return {companyId: user.companyId}
+    }
+    return {
+        companyName: new RegExp(`^${escapeRegex(user?.companyName || '')}$`, 'i'),
+    }
+}
 
-const isSameCompany = (a, b) =>
-    (a.companyName || '').trim().toLowerCase() ===
-    (b.companyName || '').trim().toLowerCase()
+const isSameCompany = (a, b) => {
+    if (a && b && a.companyId && b.companyId) {
+        return String(a.companyId) === String(b.companyId)
+    }
+    return (
+        (a?.companyName || '').trim().toLowerCase() ===
+        (b?.companyName || '').trim().toLowerCase()
+    )
+}
 
 // Loads the target user for a mutation. Users outside the admin's company are
 // reported as not found so the directory never leaks other companies.
@@ -40,8 +50,8 @@ const findManagedUser = async (req, res) => {
 // Declared before '/' so it is never shadowed by the directory route.
 router.get('/assignable', requireAuth, async (req, res) => {
     try {
-        const users = await User.find(sameCompanyFilter(req.user))
-            .select('_id fullName email role')
+        const users = await User.find(companyIdFilter(req.user))
+            .select('_id fullName email role companyId companyName')
             .sort({fullName: 1})
         return res.json(users)
     } catch (err) {
@@ -55,7 +65,7 @@ router.get('/assignable', requireAuth, async (req, res) => {
 router.get('/', requireAuth, requireRole('Admin'), async (req, res) => {
     try {
         const {search, role, team} = req.query
-        const filter = {...sameCompanyFilter(req.user)}
+        const filter = {...companyIdFilter(req.user)}
 
         if (search && String(search).trim()) {
             const pattern = new RegExp(escapeRegex(String(search).trim()), 'i')
@@ -90,6 +100,58 @@ router.get('/', requireAuth, requireRole('Admin'), async (req, res) => {
     }
 })
 
+// POST /api/users: Admin User Management endpoint to create staff for Admin's company
+// Backend automatically sets companyId = req.user.companyId and ignores req.body.companyId
+router.post('/', requireAuth, requireRole('Admin'), async (req, res) => {
+    try {
+        const {fullName, email, password, role, teamId} = req.body || {}
+
+        if (!fullName || !email || !password) {
+            return res.status(400).json({message: 'Full name, email, and password are required'})
+        }
+        if (role && !ROLES.includes(role)) {
+            return res.status(400).json({message: 'Role must be one of: ' + ROLES.join(', ')})
+        }
+
+        const normalizedEmail = String(email).toLowerCase().trim()
+        const existing = await User.findOne({email: normalizedEmail})
+        if (existing) {
+            return res.status(409).json({message: 'An account with this email already exists'})
+        }
+
+        let team = null
+        if (teamId) {
+            if (!mongoose.Types.ObjectId.isValid(teamId)) {
+                return res.status(400).json({message: 'Invalid team'})
+            }
+            team = await Team.findById(teamId)
+            if (!team || (team.companyId && String(team.companyId) !== String(req.user.companyId))) {
+                return res.status(404).json({message: 'Team not found'})
+            }
+        }
+
+        const newUser = await User.create({
+            fullName: fullName.trim(),
+            email: normalizedEmail,
+            password,
+            companyId: req.user.companyId,
+            companyName: req.user.companyName,
+            role: role || 'User',
+            team: team ? team._id : null,
+            emailVerified: true, // Accounts created directly by an Admin are pre-verified
+        })
+
+        if (team) {
+            await newUser.populate('team', 'name')
+        }
+
+        return res.status(201).json({user: serializeUser(newUser)})
+    } catch (err) {
+        console.error('Create user error:', err)
+        return res.status(500).json({message: 'Unable to create user'})
+    }
+})
+
 // PATCH /api/users/:id/role: assign a role to a user in the admin's company
 router.patch('/:id/role', requireAuth, requireRole('Admin'), async (req, res) => {
     try {
@@ -110,9 +172,6 @@ router.patch('/:id/role', requireAuth, requireRole('Admin'), async (req, res) =>
         user.role = role
         await user.save()
 
-        // Keep the "one supervisor per team" invariant: if this user was a
-        // designated team supervisor and no longer holds the Supervisor role,
-        // clear the designation.
         if (role !== 'Supervisor') {
             await Team.updateMany({supervisor: user._id}, {supervisor: null})
         }
@@ -125,8 +184,47 @@ router.patch('/:id/role', requireAuth, requireRole('Admin'), async (req, res) =>
     }
 })
 
+// PATCH /api/users/:id/deactivate: deactivate/activate a user in admin's company
+router.patch('/:id/deactivate', requireAuth, requireRole('Admin'), async (req, res) => {
+    try {
+        if (String(req.params.id) === String(req.user._id)) {
+            return res.status(400).json({message: 'You cannot deactivate your own account'})
+        }
+
+        const user = await findManagedUser(req, res)
+        if (!user) return
+
+        const isActive = req.body?.isActive !== undefined ? Boolean(req.body.isActive) : false
+        user.isActive = isActive
+        await user.save()
+
+        await user.populate('team', 'name')
+        return res.json({user: serializeUser(user)})
+    } catch (err) {
+        console.error('Deactivate user error:', err)
+        return res.status(500).json({message: 'Unable to update user status'})
+    }
+})
+
+// DELETE /api/users/:id: delete a user in admin's company
+router.delete('/:id', requireAuth, requireRole('Admin'), async (req, res) => {
+    try {
+        if (String(req.params.id) === String(req.user._id)) {
+            return res.status(400).json({message: 'You cannot delete your own account'})
+        }
+
+        const user = await findManagedUser(req, res)
+        if (!user) return
+
+        await User.deleteOne({_id: user._id})
+        return res.json({message: 'User deleted successfully'})
+    } catch (err) {
+        console.error('Delete user error:', err)
+        return res.status(500).json({message: 'Unable to delete user'})
+    }
+})
+
 // PATCH /api/users/:id/team: assign or transfer a user's team
-// Body: { teamId: '<id>' | null }
 router.patch('/:id/team', requireAuth, requireRole('Admin'), async (req, res) => {
     try {
         const {teamId} = req.body || {}
@@ -137,10 +235,9 @@ router.patch('/:id/team', requireAuth, requireRole('Admin'), async (req, res) =>
                 return res.status(400).json({message: 'Invalid team'})
             }
             team = await Team.findById(teamId)
-            // Another company's team reads as not found
             if (
                 !team ||
-                (team.company && !sameCompanyName(team.company, req.user.companyName))
+                (team.companyId && String(team.companyId) !== String(req.user.companyId))
             ) {
                 return res.status(404).json({message: 'Team not found'})
             }
@@ -155,7 +252,6 @@ router.patch('/:id/team', requireAuth, requireRole('Admin'), async (req, res) =>
         user.team = team ? team._id : null
         await user.save()
 
-        // A supervisor leaving their team stops supervising it.
         if (previousTeam && previousTeam !== nextTeam) {
             await Team.updateMany(
                 {_id: previousTeam, supervisor: user._id},
@@ -171,9 +267,7 @@ router.patch('/:id/team', requireAuth, requireRole('Admin'), async (req, res) =>
     }
 })
 
-// PATCH /api/users/:id/permissions: grant or revoke individual permission
-// overrides for restricted features (Settings -> Permissions, Admin only).
-// Body: { permissions: { deleteCustomers?, deleteRecords?, viewAllData? } }
+// PATCH /api/users/:id/permissions: grant or revoke individual permission overrides
 router.patch('/:id/permissions', requireAuth, requireRole('Admin'), async (req, res) => {
     try {
         const updates = req.body?.permissions
