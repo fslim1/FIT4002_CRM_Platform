@@ -1,10 +1,8 @@
-/**
- * Jest global teardown — runs ONCE after the entire test run.
- * Stops the MongoMemoryServer started in globalSetup.js.
- */
-
+// A server supplied through MONGO_TEST_URI is not owned by this test run.
 module.exports = async function globalTeardown() {
-    if (global.__MONGOD__) {
-        await global.__MONGOD__.stop()
-    }
+    const server = globalThis.__MONGOD__
+    if (!server) return
+
+    await server.stop()
+    globalThis.__MONGOD__ = undefined
 }

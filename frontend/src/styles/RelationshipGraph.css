@@ -1,0 +1,604 @@
+/* Relationship Graph panel.
+   Follows the app's existing overlay idiom (SalesPipeline.css .modal-overlay)
+   and the glass card treatment used by .right-column in CustomerProfile.css. */
+
+.rg-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(20, 21, 50, 0.5);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    /* Above the app's other modals (1000) and the sidebar toggle. */
+    z-index: 1200;
+}
+
+.rg-panel {
+    width: min(1180px, 94vw);
+    height: min(780px, 88vh);
+    display: flex;
+    flex-direction: column;
+    background: rgba(255, 255, 255, 0.92);
+    backdrop-filter: blur(24px) saturate(1.3);
+    -webkit-backdrop-filter: blur(24px) saturate(1.3);
+    border: 1px solid rgba(255, 255, 255, 0.6);
+    border-radius: clamp(16px, 2vw, 30px);
+    box-shadow: 0 28px 72px rgba(0, 0, 0, 0.3);
+    font-family: "Inter", system-ui, sans-serif;
+    overflow: hidden;
+}
+
+/* --- Header --- */
+
+.rg-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    padding: clamp(16px, 2vw, 24px);
+    border-bottom: 1px solid rgba(37, 57, 132, 0.12);
+    flex-shrink: 0;
+}
+
+.rg-header-text {
+    min-width: 0;
+}
+
+.rg-title {
+    margin: 0;
+    font-size: clamp(16px, 2vw, 20px);
+    font-weight: 700;
+    color: #253984;
+    letter-spacing: -0.01em;
+}
+
+.rg-title:focus-visible {
+    outline: 2px solid #253984;
+    outline-offset: 4px;
+    border-radius: 4px;
+}
+
+.rg-scope {
+    margin: 6px 0 0;
+    font-size: 12.5px;
+    line-height: 1.45;
+    color: #5b6472;
+    max-width: 68ch;
+}
+
+.rg-close {
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 1px solid rgba(37, 57, 132, 0.22);
+    background: rgba(37, 57, 132, 0.06);
+    color: #253984;
+    font-size: 18px;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.15s;
+}
+
+.rg-close:hover {
+    background: rgba(37, 57, 132, 0.14);
+}
+
+.rg-close:focus-visible {
+    outline: 2px solid #253984;
+    outline-offset: 2px;
+}
+
+/* --- Body --- */
+
+.rg-body {
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    gap: clamp(12px, 1.5vw, 18px);
+    padding: clamp(12px, 1.5vw, 18px);
+}
+
+.rg-main {
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+    display: flex;
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.72);
+    border: 1px solid rgba(37, 57, 132, 0.1);
+    overflow: hidden;
+}
+
+.rg-canvas-wrap {
+    position: relative;
+    flex: 1;
+    min-width: 0;
+    min-height: 0;
+}
+
+.rg-canvas {
+    position: absolute;
+    inset: 0;
+}
+
+.rg-canvas-controls {
+    position: absolute;
+    left: 12px;
+    bottom: 12px;
+    display: flex;
+    gap: 8px;
+    z-index: 2;
+}
+
+/* --- Rail --- */
+
+.rg-rail {
+    width: 288px;
+    flex-shrink: 0;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+.rg-legend,
+.rg-rail-section {
+    background: rgba(255, 255, 255, 0.72);
+    border: 1px solid rgba(37, 57, 132, 0.1);
+    border-radius: 16px;
+    padding: 14px 16px;
+}
+
+.rg-legend-title,
+.rg-rail-title {
+    margin: 0 0 10px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #232528;
+}
+
+.rg-legend-subtitle {
+    margin: 14px 0 8px;
+    font-size: 11.5px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    color: #6b7280;
+}
+
+.rg-legend-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.rg-legend-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.rg-legend-label {
+    font-size: 12.5px;
+    color: #3f4652;
+}
+
+/* Legend swatches mirror the node shapes on the canvas, so the four kinds stay
+   distinguishable without relying on colour alone. */
+.rg-swatch {
+    flex-shrink: 0;
+    display: inline-block;
+    width: 16px;
+}
+
+.rg-swatch--company {
+    height: 12px;
+    border-radius: 4px;
+}
+
+.rg-swatch--contact {
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+}
+
+.rg-swatch--deal {
+    width: 12px;
+    height: 12px;
+    margin: 1px 2px;
+    transform: rotate(45deg);
+}
+
+.rg-swatch--salesperson {
+    width: 0;
+    height: 0;
+    background: transparent !important;
+    border-left: 8px solid transparent;
+    border-right: 8px solid transparent;
+    border-bottom-width: 14px;
+    border-bottom-style: solid;
+}
+
+.rg-swatch--band {
+    width: 24px;
+    height: 0;
+    background: transparent !important;
+}
+
+/* --- Unmatched deals --- */
+
+.rg-unmatched-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.rg-unmatched-item {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding-left: 10px;
+    border-left: 3px solid #f5a623;
+}
+
+.rg-unmatched-name {
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #232528;
+}
+
+.rg-unmatched-stage {
+    font-size: 11px;
+    color: #6b7280;
+}
+
+.rg-unmatched-reason {
+    font-size: 11.5px;
+    color: #5b6472;
+    line-height: 1.4;
+}
+
+.rg-rail-empty {
+    margin: 0;
+    font-size: 12px;
+    color: #6b7280;
+    line-height: 1.45;
+}
+
+/* --- States --- */
+
+.rg-state {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    padding: 24px;
+    text-align: center;
+}
+
+.rg-state-text {
+    margin: 0;
+    font-size: 13.5px;
+    color: #5b6472;
+    max-width: 46ch;
+    line-height: 1.5;
+}
+
+.rg-skeleton {
+    width: min(360px, 70%);
+    height: 10px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, rgba(37, 57, 132, 0.08), rgba(37, 57, 132, 0.2), rgba(37, 57, 132, 0.08));
+    background-size: 200% 100%;
+    animation: rg-shimmer 1.4s ease-in-out infinite;
+}
+
+@keyframes rg-shimmer {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .rg-skeleton {
+        animation: none;
+    }
+}
+
+.rg-inline-error {
+    margin: auto;
+    padding: 24px;
+    font-size: 13.5px;
+    color: #5b6472;
+    text-align: center;
+}
+
+/* --- Buttons --- */
+
+.rg-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 8px 16px;
+    border-radius: 20px;
+    border: 1px solid rgba(37, 57, 132, 0.22);
+    background: rgba(37, 57, 132, 0.06);
+    color: #253984;
+    font-family: "Inter", system-ui, sans-serif;
+    font-size: 12.5px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.rg-btn:hover {
+    background: rgba(37, 57, 132, 0.14);
+}
+
+.rg-btn:focus-visible {
+    outline: 2px solid #253984;
+    outline-offset: 2px;
+}
+
+.rg-btn--ghost {
+    background: rgba(255, 255, 255, 0.88);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+}
+
+/* --- Tooltip --- */
+
+.rg-tooltip {
+    position: absolute;
+    transform: translate(12px, -50%);
+    max-width: 260px;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 9px 12px;
+    border-radius: 10px;
+    background: rgba(35, 37, 40, 0.94);
+    color: #ffffff;
+    font-size: 11.5px;
+    line-height: 1.4;
+    pointer-events: none;
+    z-index: 3;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.25);
+}
+
+.rg-tooltip-name {
+    font-size: 12.5px;
+    font-weight: 700;
+}
+
+.rg-tooltip-muted {
+    color: rgba(255, 255, 255, 0.72);
+}
+
+/* --- Notices --- */
+
+.rg-notices {
+    flex-shrink: 0;
+    padding: 12px clamp(16px, 2vw, 24px) clamp(14px, 2vw, 18px);
+    border-top: 1px solid rgba(37, 57, 132, 0.12);
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.rg-notice {
+    margin: 0;
+    font-size: 12.5px;
+    line-height: 1.45;
+    color: #5b6472;
+}
+
+/* --- Trigger button on the customer profile --- */
+
+.relationship-graph-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 18px;
+    border-radius: 22px;
+    border: 1px solid rgba(234, 246, 255, 0.35);
+    background: rgba(255, 255, 255, 0.14);
+    color: #eaf6ff;
+    font-family: "Inter", sans-serif;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.15s;
+}
+
+.relationship-graph-btn:hover {
+    background: rgba(255, 255, 255, 0.24);
+    transform: translateY(-1px);
+}
+
+.relationship-graph-btn:focus-visible {
+    outline: 2px solid #eaf6ff;
+    outline-offset: 2px;
+}
+
+/* --- Screen-reader alternative to the canvas --- */
+
+.rg-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+/* --- Narrow screens: the rail moves below the canvas --- */
+
+@media (max-width: 900px) {
+    /* Full bleed: the gutter that frames the panel on a desktop only costs
+       canvas here, and a square-cornered sheet is the expected shape. */
+    .rg-overlay {
+        padding: 0;
+    }
+
+    .rg-panel {
+        width: 100%;
+        height: 100%;
+        border-radius: 0;
+        border: none;
+    }
+
+    .rg-body {
+        flex-direction: column;
+        overflow-y: auto;
+    }
+
+    .rg-main {
+        min-height: 320px;
+    }
+
+    .rg-rail {
+        width: 100%;
+        overflow: visible;
+    }
+}
+
+/* --- Selection card --- */
+
+.rg-selection {
+    border-color: rgba(37, 57, 132, 0.28);
+    box-shadow: 0 4px 16px rgba(37, 57, 132, 0.1);
+}
+
+.rg-selection-sub {
+    margin: -4px 0 0;
+    font-size: 12px;
+    color: #6b7280;
+}
+
+.rg-selection-stat {
+    margin: 8px 0 0;
+    font-size: 12.5px;
+    color: #3f4652;
+    line-height: 1.45;
+}
+
+.rg-selection-note {
+    margin: 10px 0 0;
+    font-size: 12px;
+    color: #6b7280;
+    line-height: 1.45;
+}
+
+.rg-selection-action {
+    margin-top: 12px;
+    width: 100%;
+}
+
+/* --- Icon buttons on the canvas --- */
+
+.rg-icon-btn {
+    width: 34px;
+    height: 34px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    border: 1px solid rgba(37, 57, 132, 0.22);
+    background: rgba(255, 255, 255, 0.88);
+    color: #253984;
+    font-size: 15px;
+    cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    transition: background 0.15s;
+}
+
+.rg-icon-btn:hover {
+    background: #ffffff;
+}
+
+.rg-icon-btn:focus-visible {
+    outline: 2px solid #253984;
+    outline-offset: 2px;
+}
+
+/* --- "How this account is put together" disclosure --- */
+
+.rg-about {
+    background: rgba(255, 255, 255, 0.55);
+}
+
+.rg-about-summary {
+    cursor: pointer;
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #253984;
+    list-style: none;
+}
+
+.rg-about-summary::-webkit-details-marker {
+    display: none;
+}
+
+.rg-about-summary::before {
+    content: "▸";
+    display: inline-block;
+    margin-right: 6px;
+    transition: transform 0.15s;
+}
+
+.rg-about[open] .rg-about-summary::before {
+    transform: rotate(90deg);
+}
+
+.rg-about-summary:focus-visible {
+    outline: 2px solid #253984;
+    outline-offset: 2px;
+    border-radius: 4px;
+}
+
+.rg-about-text {
+    margin: 10px 0 0;
+    font-size: 12px;
+    line-height: 1.5;
+    color: #5b6472;
+}
+
+/* Explains why names are held back on a crowded graph. */
+.rg-canvas-hint {
+    align-self: center;
+    padding: 6px 12px;
+    border-radius: 20px;
+    background: rgba(255, 255, 255, 0.88);
+    border: 1px solid rgba(37, 57, 132, 0.14);
+    color: #5b6472;
+    font-size: 11.5px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+}
+
+.rg-legend-note {
+    margin: 10px 0 0;
+    font-size: 11.5px;
+    line-height: 1.45;
+    color: #6b7280;
+}

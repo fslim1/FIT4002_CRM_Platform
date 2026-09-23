@@ -26,8 +26,6 @@ router.route('/')
 
 router.get('/search', getCustomerByName);
 
-router.get('/search', getCustomerByName);
-
 router.route('/:id')
     .get(requireAuth, getCustomerById)
     .put(requireAuth, uploadLogo.single('companyLogo'), updateCustomer)

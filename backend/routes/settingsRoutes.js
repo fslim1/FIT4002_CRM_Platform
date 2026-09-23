@@ -102,7 +102,10 @@ router.put('/', requireAuth, requireRole('Admin'), async (req, res) => {
             )
             // Keep every risk-scoring record scoped correctly under the new name.
             await Promise.all([
-                RiskBenchmark.updateMany({companyKey: previousKey}, {companyKey: newKey, companyName: updates.companyName}),
+                RiskBenchmark.updateMany({companyKey: previousKey}, {
+                    companyKey: newKey,
+                    companyName: updates.companyName
+                }),
                 DealRiskScore.updateMany({companyKey: previousKey}, {companyKey: newKey}),
                 RiskExclusionSetting.updateMany({companyKey: previousKey}, {companyKey: newKey}),
                 RiskWeightSetting.updateMany({companyKey: previousKey}, {companyKey: newKey}),

@@ -40,4 +40,8 @@ dealSchema.virtual('daysInStage').get(function () {
   return Math.max(0, Math.floor(ms / (1000 * 60 * 60 * 24)))
 })
 
+// Deals are scoped on createdBy everywhere in the CRM, including the
+// relationship graph's account query.
+dealSchema.index({createdBy: 1})
+
 module.exports = mongoose.model('Deal', dealSchema)

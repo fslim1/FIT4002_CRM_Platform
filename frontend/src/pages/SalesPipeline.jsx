@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import {useSearchParams} from "react-router-dom";
 import "../styles/SalesPipeline.css";
 import DealCard from "../components/DealCard";
 import DealDetailModal from "../components/DealDetailModal";
@@ -39,6 +40,8 @@ function SalesPipeline() {
     const [priorityFilter, setPriorityFilter] = useState('All');
     const [searchQuery, setSearchQuery] = useState('');
     const [selectedDeal, setSelectedDeal] = useState(null);
+    const [deepLinkMiss, setDeepLinkMiss] = useState(false);
+    const [searchParams, setSearchParams] = useSearchParams();
     const canViewAllData = can(user, 'viewAllData');
     const isAdmin = user?.role === 'Admin';
     const isSupervisor = user?.role === 'Supervisor';
@@ -91,6 +94,28 @@ function SalesPipeline() {
                 setLoading(false);
             });
     }, [userFilter, teamFilter]);
+
+    // Opened from the relationship graph as /pipeline?deal=<id>. The parameter
+    // is consumed once the deals are loaded and then cleared, so a refresh or a
+    // back-navigation does not reopen a modal the viewer already closed.
+    useEffect(() => {
+        const dealId = searchParams.get('deal');
+        if (!dealId || loading) return;
+
+        const match = deals.find(d => d._id === dealId);
+        if (match) {
+            setSelectedDeal(match);
+            setDeepLinkMiss(false);
+        } else {
+            // Filtered out, deleted since, or outside this viewer's scope.
+            // Say so rather than opening an empty modal.
+            setDeepLinkMiss(true);
+        }
+
+        const next = new URLSearchParams(searchParams);
+        next.delete('deal');
+        setSearchParams(next, {replace: true});
+    }, [searchParams, setSearchParams, deals, loading]);
 
     const handleAddLead = () => setShowModal(true);
     const handleCloseModal = () => {
@@ -202,6 +227,20 @@ function SalesPipeline() {
 
     return (
         <div className="pipeline-page">
+
+            {deepLinkMiss && (
+                <div className="pipeline-deeplink-miss" role="status">
+                    <span>That deal is not in the current view. It may be filtered out, or no longer exist.</span>
+                    <button
+                        type="button"
+                        className="pipeline-deeplink-dismiss"
+                        onClick={() => setDeepLinkMiss(false)}
+                        aria-label="Dismiss"
+                    >
+                        ×
+                    </button>
+                </div>
+            )}
 
             {/* Won / Lost drop zones */}
             <div className="wonlost-panel">

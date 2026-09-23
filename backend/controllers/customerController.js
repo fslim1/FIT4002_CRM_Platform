@@ -248,7 +248,10 @@ const addInteraction = async (req, res) => {
           return res.status(403).json({message: 'You do not have access to this customer'});
       }
 
-    // DUAL-WRITE STEP: If it's a Task, spawn a card on the Kanban board
+      // DUAL-WRITE STEP: If it's a Task, spawn a card on the Kanban board.
+      // createdBy is required by the Task schema — without it this throws a
+      // ValidationError before the interaction below is ever pushed, so logging
+      // a Task from the profile used to fail with a 500 and save nothing at all.
     if (type === 'Task') {
       await Task.create({
           title: details || "New Task",
@@ -258,6 +261,7 @@ const addInteraction = async (req, res) => {
           dueDate: dueDate ? new Date(dueDate) : null,
           customer: new mongoose.Types.ObjectId(customerId),
         assignedTo: [new mongoose.Types.ObjectId(req.user._id)],
+          createdBy: req.user._id,
         collaborative: false
       });
     }

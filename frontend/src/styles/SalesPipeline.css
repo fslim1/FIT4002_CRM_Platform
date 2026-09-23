@@ -533,3 +533,37 @@
   color: #232528;
   letter-spacing: -0.02em;
 }
+
+/* Notice shown when /pipeline?deal=<id> names a deal that is not in view —
+   filtered out, deleted since, or outside the viewer's scope. */
+.pipeline-deeplink-miss {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 12px;
+    padding: 10px 16px;
+    border-radius: 14px;
+    border: 1px solid rgba(245, 166, 35, 0.5);
+    background: rgba(255, 248, 240, 0.92);
+    color: #7a4a00;
+    font-family: "Inter", sans-serif;
+    font-size: 13px;
+}
+
+.pipeline-deeplink-dismiss {
+    flex-shrink: 0;
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: 50%;
+    background: transparent;
+    color: #7a4a00;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+}
+
+.pipeline-deeplink-dismiss:hover {
+    background: rgba(122, 74, 0, 0.1);
+}
