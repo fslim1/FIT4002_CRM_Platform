@@ -8,6 +8,12 @@ const notificationSchema = new mongoose.Schema(
             required: true
         },
 
+        customer: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Customer",
+            default: null
+        },
+
         title: {
             type: String,
             required: true
@@ -20,8 +26,31 @@ const notificationSchema = new mongoose.Schema(
 
         type: {
             type: String,
-            enum: ["task", "reminder", "overdue", "activity"],
-            default: "task"
+            enum: ["task", "reminder", "overdue", "activity", "email"],
+            default: "activity"
+        },
+
+        source: {
+            type: String,
+            enum: ["gmail", "system"],
+            default: "system"
+        },
+
+        senderEmail: {
+            type: String,
+            default: null
+        },
+
+        subject: {
+            type: String,
+            default: null
+        },
+
+        messageId: {
+            type: String,
+            default: null,
+            index: true,
+            sparse: true
         },
 
         read: {

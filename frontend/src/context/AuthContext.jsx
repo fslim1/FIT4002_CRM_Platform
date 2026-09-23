@@ -5,6 +5,7 @@ import {requestGmailToken} from '@/api/gmailToken'
 
 const TOKEN_KEY = 'nexgen_token'
 const USER_KEY = 'nexgen_user'
+const GOOGLE_TOKEN_KEY = 'google_access_token'
 
 const readStoredUser = () => {
     const raw = localStorage.getItem(USER_KEY)
@@ -12,6 +13,14 @@ const readStoredUser = () => {
         return raw ? JSON.parse(raw) : null
     } catch {
         return null
+    }
+}
+
+const persistGoogleAccessToken = (token) => {
+    if (token) {
+        localStorage.setItem(GOOGLE_TOKEN_KEY, token)
+    } else {
+        localStorage.removeItem(GOOGLE_TOKEN_KEY)
     }
 }
 
@@ -71,7 +80,10 @@ export function AuthProvider({children}) {
     // code, so the raw response is handed back for the page to act on.
     const signup = useCallback(async (payload) => {
         const data = await authApi.signup(payload)
-        if (data.token && data.user) persist(data.token, data.user)
+        if (data.token && data.user) {
+            persist(data.token, data.user)
+            persistGoogleAccessToken(data.user.gmailAccessToken || payload.gmailAccessToken)
+        }
         return data
     }, [])
 
@@ -84,6 +96,7 @@ export function AuthProvider({children}) {
     const loginWithGoogle = useCallback(async (credential) => {
         const {token, user: u} = await authApi.googleLogin(credential)
         persist(token, u)
+        persistGoogleAccessToken(u?.gmailAccessToken || credential?.gmailAccessToken)
         return u
     }, [])
 

@@ -1,6 +1,7 @@
 const { google } = require('googleapis');
 const User = require('../models/User');
 const Customer = require('../models/Customer');
+const Notification = require('../models/Notification');
 
 exports.handleGmailPush = async (req, res) => {
   // Pub/Sub expects an immediate 200 OK to acknowledge receipt
@@ -73,7 +74,6 @@ exports.handleGmailPush = async (req, res) => {
         const customer = await Customer.findOne({ email: senderEmail });
         if (!customer) continue;
 
-        // Prevent duplicate interaction logging
         const isLogged = customer.interactions.some(
           (i) => i.details && i.details.includes(`(Msg ID: ${msgId})`)
         );
@@ -88,10 +88,32 @@ exports.handleGmailPush = async (req, res) => {
           await customer.save();
 
           console.log(`📥 Inbound email logged for customer: ${customer.fullName}`);
-
-          // Optional: Emit a WebSocket event if using Socket.IO
-          // io.to(user._id.toString()).emit('new-email-notification', { customer, subject, msgId });
         }
+
+        const existingNotification = await Notification.findOne({
+          user: user._id,
+          messageId: msgId,
+        });
+
+        if (!existingNotification) {
+          await Notification.create({
+            user: user._id,
+            customer: customer._id,
+            title: `New email from ${customer.fullName}`,
+            message: `You received an email from ${senderEmail} about "${subject}".`,
+            type: 'email',
+            source: 'gmail',
+            senderEmail,
+            subject,
+            messageId: msgId,
+            read: false,
+          });
+
+          console.log(`📧 Notification saved for user ${user.email} from ${senderEmail}`);
+        }
+
+        // Optional: Emit a WebSocket event if using Socket.IO
+        // io.to(user._id.toString()).emit('new-email-notification', { customer, subject, msgId });
       }
     }
   } catch (error) {

@@ -123,10 +123,12 @@ exports.verifyAccessToken = async (accessToken) => {
         throw authFailed('Google did not return a verified email')
     }
 
+    const scopes = String(info.scope || '').split(' ').map((s) => s.trim()).filter(Boolean)
     const email = info.email.toLowerCase()
     return {
         googleId: info.sub,
         email,
         fullName: await displayNameFor(accessToken, email),
+        gmailSendGranted: scopes.includes('https://www.googleapis.com/auth/gmail.send'),
     }
 }

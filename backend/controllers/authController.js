@@ -282,6 +282,8 @@ exports.googleLogin = async (req, res) => {
             $or: [{googleId: profile.googleId}, {email: profile.email}],
         })
 
+        const hasGmailSendScope = Boolean(profile.gmailSendGranted)
+
         const resolvedAccessToken = googleTokens?.access_token || gmailAccessToken || null
         const resolvedRefreshToken = googleTokens?.refresh_token || gmailRefreshToken || null
 
@@ -295,13 +297,19 @@ exports.googleLogin = async (req, res) => {
             if (!user.googleId) user.googleId = profile.googleId
             // Google has already proven the address belongs to this person.
             if (!user.emailVerified) user.emailVerified = true
-            if (resolvedAccessToken) {
-                user.gmailAccessToken = resolvedAccessToken
-                user.isGmailLinked = true
+
+            if (hasGmailSendScope) {
+                if (resolvedAccessToken) {
+                    user.gmailAccessToken = resolvedAccessToken
+                }
+                if (resolvedRefreshToken) {
+                    user.gmailRefreshToken = resolvedRefreshToken
+                }
+                user.isGmailLinked = Boolean(user.gmailAccessToken || user.gmailRefreshToken)
+            } else {
+                user.isGmailLinked = Boolean(user.gmailAccessToken || user.gmailRefreshToken)
             }
-            if (resolvedRefreshToken) {
-                user.gmailRefreshToken = resolvedRefreshToken
-            }
+
             await user.save()
         } else {
             const companyName = companyFromEmail(profile.email)
@@ -313,9 +321,9 @@ exports.googleLogin = async (req, res) => {
                 emailVerified: true,
                 authProvider: 'google',
                 googleId: profile.googleId,
-                gmailAccessToken: resolvedAccessToken,
-                gmailRefreshToken: resolvedRefreshToken,
-                isGmailLinked: Boolean(resolvedAccessToken || resolvedRefreshToken),
+                gmailAccessToken: hasGmailSendScope ? resolvedAccessToken : null,
+                gmailRefreshToken: hasGmailSendScope ? resolvedRefreshToken : null,
+                isGmailLinked: hasGmailSendScope && Boolean(resolvedAccessToken || resolvedRefreshToken),
             })
 
             // H6 AC2: same default-seeding on Google's new-company path.

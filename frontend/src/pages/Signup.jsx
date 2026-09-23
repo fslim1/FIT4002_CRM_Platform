@@ -177,7 +177,7 @@ export default function Signup() {
             setPhase('connecting')
             let gmailCode = null
             try {
-                gmailCode = await requestGmailToken()
+                gmailCode = await requestGmailToken({forceConsent: true})
             } catch (gmailErr) {
                 console.warn('Gmail was not linked during sign-up:', gmailErr)
             }
