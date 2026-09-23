@@ -14,8 +14,12 @@ export function EmailComposer({customerEmail, customerId, onClose, onEmailSent})
         return;
     }
 
-      const accessToken = window.localStorage.getItem('google_access_token') ||
-          window.sessionStorage.getItem('accessToken');
+      const storedUserRaw = localStorage.getItem('nexgen_user');
+      const storedUser = storedUserRaw ? JSON.parse(storedUserRaw) : null;
+      const accessToken =
+          localStorage.getItem('google_access_token') ||
+          storedUser?.gmailAccessToken ||
+          sessionStorage.getItem('accessToken');
 
       if (!accessToken) {
           setErrorMsg("Google authentication required to send emails. Please link your account in Settings.");

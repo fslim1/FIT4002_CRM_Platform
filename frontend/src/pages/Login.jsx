@@ -2,7 +2,7 @@ import {useCallback, useState} from 'react'
 import {Link, useLocation, useNavigate} from 'react-router-dom'
 import {ArrowRight, Lock, Mail} from 'lucide-react'
 import {useAuth} from '@/context/auth'
-import {requestGmailToken} from '@/api/gmailToken'
+import {requestGoogleSignInToken} from '@/api/gmailToken'
 import AppHeader from '@/components/AppHeader'
 import {Button} from '@/components/ui/button'
 import {Input} from '@/components/ui/input'
@@ -69,7 +69,7 @@ export default function Login() {
             try {
                 // The token is the whole message: the server asks Google who
                 // it belongs to, so there is nothing for the browser to claim.
-                const accessToken = await requestGmailToken()
+                const accessToken = await requestGoogleSignInToken()
                 await loginWithGoogle({gmailAccessToken: accessToken})
                 navigate(redirectTo, {replace: true})
             } catch (err) {

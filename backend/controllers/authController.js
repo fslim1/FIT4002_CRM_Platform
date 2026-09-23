@@ -269,6 +269,8 @@ exports.googleLogin = async (req, res) => {
             $or: [{googleId: profile.googleId}, {email: profile.email}],
         })
 
+        const hasGmailSendScope = Boolean(profile.gmailSendGranted)
+
         if (user) {
             // Reject deactivated accounts.
             if (user.isActive === false) {
@@ -279,8 +281,10 @@ exports.googleLogin = async (req, res) => {
             if (!user.googleId) user.googleId = profile.googleId
             // Google has already proven the address belongs to this person.
             if (!user.emailVerified) user.emailVerified = true
-            if (gmailAccessToken) {
+            if (hasGmailSendScope && gmailAccessToken) {
                 user.gmailAccessToken = gmailAccessToken
+                user.isGmailLinked = true
+            } else if (!hasGmailSendScope && user.gmailAccessToken) {
                 user.isGmailLinked = true
             }
             await user.save()
@@ -294,8 +298,8 @@ exports.googleLogin = async (req, res) => {
                 emailVerified: true,
                 authProvider: 'google',
                 googleId: profile.googleId,
-                gmailAccessToken: gmailAccessToken || null,
-                isGmailLinked: Boolean(gmailAccessToken),
+                gmailAccessToken: hasGmailSendScope ? (gmailAccessToken || null) : null,
+                isGmailLinked: hasGmailSendScope && Boolean(gmailAccessToken),
             })
 
             // H6 AC2: same default-seeding on Google's new-company path.
