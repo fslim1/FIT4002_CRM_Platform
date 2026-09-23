@@ -8,6 +8,7 @@ const path = require("path");
 dotenv.config()
 
 const authRoutes = require('./routes/auth')
+const { startGmailWatchRenewalCron } = require('./services/gmailWatchScheduler')
 
 const app = express()
 
@@ -75,6 +76,9 @@ app.use('/api/portal', require('./routes/portalRoutes'))
 app.use('/api/dashboard', require('./routes/dashboardRoutes'))
 app.use('/api/risk-benchmarks', require('./routes/riskBenchmarkRoutes'))
 app.use('/api/risk-weights', require('./routes/riskWeightRoutes'))
+app.use('/api/webhook', require('./routes/webhookRoutes'))
+
+startGmailWatchRenewalCron()
 
 // Error handlers — always last
 app.use((err, req, res, next) => {

@@ -4,20 +4,29 @@ export const requestGmailToken = () => {
             return reject(new Error('Google Identity Services SDK not loaded'))
         }
 
-        const tokenClient = window.google.accounts.oauth2.initTokenClient({
+        const codeClient = window.google.accounts.oauth2.initCodeClient({
             client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
-            scope:
-                'https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile',
-            prompt: '',
+            scope: [
+                'openid',
+                'email',
+                'profile',
+                'https://www.googleapis.com/auth/gmail.modify',
+            ].join(' '),
+            prompt: 'consent',
+            ux_mode: 'popup',
             callback: (response) => {
                 if (response.error) {
                     reject(response)
-                } else {
-                    resolve(response.access_token)
+                    return
                 }
+                if (!response.code) {
+                    reject(new Error('Google did not return an authorization code'))
+                    return
+                }
+                resolve(response.code)
             },
         })
 
-        tokenClient.requestAccessToken()
+        codeClient.requestCode()
     })
 }

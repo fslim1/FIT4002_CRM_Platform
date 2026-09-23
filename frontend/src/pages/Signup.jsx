@@ -175,9 +175,9 @@ export default function Signup() {
             // is unavailable, misconfigured or declined, the account is still
             // created and Gmail can be linked later from Settings.
             setPhase('connecting')
-            let gmailAccessToken = null
+            let gmailCode = null
             try {
-                gmailAccessToken = await requestGmailToken()
+                gmailCode = await requestGmailToken()
             } catch (gmailErr) {
                 console.warn('Gmail was not linked during sign-up:', gmailErr)
             }
@@ -188,7 +188,7 @@ export default function Signup() {
                 email: form.email.trim(),
                 password: form.password,
                 companyName: form.companyName.trim(),
-                gmailAccessToken,
+                gmailCode,
             })
 
             if (result?.verificationRequired) {

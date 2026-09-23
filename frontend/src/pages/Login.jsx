@@ -69,8 +69,8 @@ export default function Login() {
             try {
                 // The token is the whole message: the server asks Google who
                 // it belongs to, so there is nothing for the browser to claim.
-                const accessToken = await requestGmailToken()
-                await loginWithGoogle({gmailAccessToken: accessToken})
+                const authCode = await requestGmailToken()
+                await loginWithGoogle({code: authCode})
                 navigate(redirectTo, {replace: true})
             } catch (err) {
                 if (err?.error === 'access_denied' || err?.message?.includes('closed')) {

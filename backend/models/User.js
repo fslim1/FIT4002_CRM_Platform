@@ -88,6 +88,10 @@ const userSchema = new mongoose.Schema(
             type: String,
             default: null,
         },
+        gmailRefreshToken: {
+            type: String,
+            default: null,
+        },
         isGmailLinked: {
             type: Boolean,
             default: false,
@@ -98,6 +102,8 @@ const userSchema = new mongoose.Schema(
             default: true,
             index: true,
         },
+        lastHistoryId: { type: String, default: null },
+        gmailWatchExpiration: { type: Date, default: null }
     },
     {timestamps: true}
 )

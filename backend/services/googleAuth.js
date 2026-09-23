@@ -12,13 +12,38 @@ let client
 
 const getClient = () => {
     const clientId = process.env.GOOGLE_CLIENT_ID
-    if (!clientId) {
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET
+    if (!clientId || !clientSecret) {
         const err = new Error('Google OAuth is not configured on the server')
         err.status = 503
         throw err
     }
-    if (!client) client = new OAuth2Client(clientId)
+    if (!client) {
+        client = new OAuth2Client(
+            clientId,
+            clientSecret,
+            process.env.GOOGLE_REDIRECT_URI || 'postmessage'
+        )
+    }
     return client
+}
+
+exports.exchangeGoogleCode = async (code) => {
+    if (typeof code !== 'string' || !code.trim()) {
+        throw authFailed('Missing Google authorization code', 400)
+    }
+
+    const oauth = getClient()
+    const {tokens} = await oauth.exchangeCodeForTokens({
+        code,
+        redirect_uri: process.env.GOOGLE_REDIRECT_URI || 'postmessage',
+    })
+
+    if (!tokens?.access_token) {
+        throw authFailed('Google did not return an access token')
+    }
+
+    return tokens
 }
 
 exports.verifyIdToken = async (idToken) => {

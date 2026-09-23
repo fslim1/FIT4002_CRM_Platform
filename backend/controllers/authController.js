@@ -1,9 +1,10 @@
 const User = require('../models/User')
 const {signToken} = require('../middleware/auth')
-const {verifyIdToken, verifyAccessToken} = require('../services/googleAuth')
+const {verifyIdToken, verifyAccessToken, exchangeGoogleCode} = require('../services/googleAuth')
 const {verifyEmailExists} = require('../services/emailVerification')
 const {validatePassword} = require('../services/passwordPolicy')
 const {seedCompanyRiskBenchmarksIfNew} = require('../services/seedCompanyDefaults')
+const {setupGmailWatch} = require('../services/gmailService')
 const {
     isConfirmationRequired,
     isValidCodeFormat,
@@ -23,7 +24,7 @@ const normalizeEmail = (email) => String(email || '').toLowerCase().trim()
 
 exports.signup = async (req, res) => {
     try {
-        const {fullName, email, password, companyName, gmailAccessToken} = req.body || {}
+        const {fullName, email, password, companyName, gmailAccessToken, gmailRefreshToken, gmailCode} = req.body || {}
 
         if (!fullName || !email || !password || !companyName) {
             return res
@@ -67,6 +68,9 @@ exports.signup = async (req, res) => {
         }
 
         const confirmationRequired = isConfirmationRequired()
+        const resolvedAccessToken = gmailAccessToken || null
+        const resolvedRefreshToken = gmailRefreshToken || null
+        const googleTokens = gmailCode ? await exchangeGoogleCode(gmailCode) : null
 
         // Role is always 'User' on public signup — every other role is granted
         // by an Admin from user management.
@@ -77,9 +81,18 @@ exports.signup = async (req, res) => {
             companyName: companyName.trim(),
             role: 'User',
             emailVerified: !confirmationRequired,
-            gmailAccessToken: gmailAccessToken || null,
-            isGmailLinked: Boolean(gmailAccessToken),
+            gmailAccessToken: googleTokens?.access_token || resolvedAccessToken,
+            gmailRefreshToken: googleTokens?.refresh_token || resolvedRefreshToken,
+            isGmailLinked: Boolean(googleTokens?.access_token || resolvedAccessToken || googleTokens?.refresh_token || resolvedRefreshToken),
         })
+
+        if (user.gmailRefreshToken && !user.lastHistoryId) {
+            try {
+                await setupGmailWatch(user._id)
+            } catch (watchError) {
+                console.warn('Gmail watch setup after signup failed:', watchError.message)
+            }
+        }
 
         // H6 AC2: default benchmarks exist the moment a new company appears,
         // so scoring never starts from an empty configuration.
@@ -241,16 +254,16 @@ exports.me = async (req, res) => {
 
 exports.googleLogin = async (req, res) => {
     try {
-        const {credential, gmailAccessToken} = req.body || {}
+        const {credential, gmailAccessToken, gmailRefreshToken, code} = req.body || {}
 
-        // Who the caller is has to come from a token Google issued to this
-        // application, never from the request body: an address and an account
-        // id are things anyone can type, so trusting them would let a caller
-        // sign in as whoever they named.
+        let googleTokens = null
         let profile
         try {
             if (typeof credential === 'string' && credential) {
                 profile = await verifyIdToken(credential)
+            } else if (typeof code === 'string' && code) {
+                googleTokens = await exchangeGoogleCode(code)
+                profile = await verifyAccessToken(googleTokens.access_token)
             } else if (typeof gmailAccessToken === 'string' && gmailAccessToken) {
                 profile = await verifyAccessToken(gmailAccessToken)
             } else {
@@ -269,6 +282,9 @@ exports.googleLogin = async (req, res) => {
             $or: [{googleId: profile.googleId}, {email: profile.email}],
         })
 
+        const resolvedAccessToken = googleTokens?.access_token || gmailAccessToken || null
+        const resolvedRefreshToken = googleTokens?.refresh_token || gmailRefreshToken || null
+
         if (user) {
             // Reject deactivated accounts.
             if (user.isActive === false) {
@@ -279,9 +295,12 @@ exports.googleLogin = async (req, res) => {
             if (!user.googleId) user.googleId = profile.googleId
             // Google has already proven the address belongs to this person.
             if (!user.emailVerified) user.emailVerified = true
-            if (gmailAccessToken) {
-                user.gmailAccessToken = gmailAccessToken
+            if (resolvedAccessToken) {
+                user.gmailAccessToken = resolvedAccessToken
                 user.isGmailLinked = true
+            }
+            if (resolvedRefreshToken) {
+                user.gmailRefreshToken = resolvedRefreshToken
             }
             await user.save()
         } else {
@@ -294,12 +313,21 @@ exports.googleLogin = async (req, res) => {
                 emailVerified: true,
                 authProvider: 'google',
                 googleId: profile.googleId,
-                gmailAccessToken: gmailAccessToken || null,
-                isGmailLinked: Boolean(gmailAccessToken),
+                gmailAccessToken: resolvedAccessToken,
+                gmailRefreshToken: resolvedRefreshToken,
+                isGmailLinked: Boolean(resolvedAccessToken || resolvedRefreshToken),
             })
 
             // H6 AC2: same default-seeding on Google's new-company path.
             await seedCompanyRiskBenchmarksIfNew(companyName)
+        }
+
+        if (user.gmailRefreshToken && !user.lastHistoryId) {
+            try {
+                await setupGmailWatch(user._id)
+            } catch (watchError) {
+                console.warn('Gmail watch setup after Google login failed:', watchError.message)
+            }
         }
 
         const token = signToken(user._id)
@@ -307,5 +335,5 @@ exports.googleLogin = async (req, res) => {
     } catch (err) {
         console.error('Google login error:', err)
         return res.status(500).json({message: 'Unable to complete Google login'})
-    }    
+    }
 }
