@@ -119,9 +119,9 @@ use: `no-company`, `sparse-account`, `no-recent-interactions`, `capped`.
 field alone can never connect a deal to more than one person. `buildGraph`
 accepts `dealContactLinks`, a list of `{deal, contact}` id pairs, and treats
 them as equal evidence alongside the name match. Any record that ties a deal to
-a contact can be fed in this way, for example a task raised against both. Links
-naming a contact outside the account are ignored, and the caller must pass only
-records the viewer is allowed to see, the same as every other input.
+a contact can be fed in this way. The controller supplies visible tasks that
+reference both records. Links naming a contact outside the account are ignored,
+and the caller passes only records the viewer is allowed to see.
 
 Each drawn connection carries an `evidence` value saying how it was reached,
 either `deal-customer` or `linked-record`, so the panel can explain a connection
@@ -135,16 +135,14 @@ language. Every node kind differs in both shape and colour, because resting the
 distinction on colour alone fails for a colour-blind viewer and in a greyscale
 print. Keep that property for anything new.
 
-## Work that is not built yet
+**Single-contact deals.** A deal node is `singleThreaded` when its distinct
+contact set contains exactly one contact. The set combines the deal's Customer
+name with visible tasks that reference both the deal and a contact, and is
+deduplicated before the node cap is applied. The canvas, legend and side list
+all use that same node field. It describes only records visible to the current
+viewer, matching the scope used for the rest of the graph.
 
-**Flagging deals that rest on a single contact.** Every deal node already
-carries `contactCount`, so the flag itself is a comparison. What it needs first
-is a decision about evidence: with only the customer name to go on, every drawn
-deal has exactly one contact and the flag would say nothing. Feeding
-`dealContactLinks` from records that already tie a deal to a contact is what
-makes the count meaningful. The panel will also need to say that the result is
-calculated from the records the viewer can see, since two people with different
-permissions can legitimately see a different answer for the same deal.
+## Work that is not built yet
 
 **A coverage overview across accounts.** Rank accounts by how thin their
 relationship coverage is. Build it from the same scoped records and the same

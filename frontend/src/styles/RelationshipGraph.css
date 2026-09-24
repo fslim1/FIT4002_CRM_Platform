@@ -542,6 +542,12 @@
     outline-offset: 2px;
 }
 
+.rg-inspect-toggle[aria-pressed="true"] {
+    color: #ffffff;
+    background: #253984;
+    border-color: #253984;
+}
+
 /* --- "How this account is put together" disclosure --- */
 
 .rg-about {
@@ -601,4 +607,83 @@
     font-size: 11.5px;
     line-height: 1.45;
     color: #6b7280;
+}
+
+.rg-legend-single {
+    margin-top: 10px;
+}
+
+.rg-swatch--single-threaded {
+    width: 13px;
+    height: 13px;
+    margin: 1px 2px;
+    transform: rotate(45deg);
+    background: #8b9199;
+    border: 3px solid #c0392b;
+    box-sizing: border-box;
+}
+
+.rg-single-section {
+    border-color: rgba(192, 57, 43, 0.28);
+}
+
+.rg-rail-context {
+    margin: 0 0 10px;
+    color: #6b7280;
+    font-size: 11.5px;
+    line-height: 1.4;
+}
+
+.rg-single-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.rg-single-item {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    padding-left: 10px;
+    border-left: 3px solid #c0392b;
+    color: #6b7280;
+    font-size: 11.5px;
+}
+
+.rg-record-link {
+    display: inline-flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 6px;
+    padding: 0;
+    border: 0;
+    background: none;
+    color: #253984;
+    font: inherit;
+    font-weight: 600;
+    text-align: left;
+    cursor: pointer;
+}
+
+.rg-record-link:hover {
+    text-decoration: underline;
+}
+
+.rg-record-link:focus-visible {
+    outline: 2px solid #253984;
+    outline-offset: 2px;
+    border-radius: 2px;
+}
+
+.rg-single-warning {
+    margin: 10px 0 0;
+    padding: 8px 10px;
+    border-radius: 8px;
+    background: rgba(192, 57, 43, 0.09);
+    color: #9f2f24;
+    font-size: 12px;
+    line-height: 1.4;
 }

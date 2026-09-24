@@ -3,7 +3,7 @@ import {NODE_KINDS, BAND_STYLES} from '@/lib/relationshipGraphStyle'
 // The band thresholds and their wording come from the API response, so the
 // legend can never describe different numbers from the ones the graph was
 // drawn with.
-function RelationshipGraphLegend({bands = []}) {
+function RelationshipGraphLegend({bands = [], activityTypes = []}) {
     return (
         <div className="rg-legend">
             <h3 className="rg-legend-title">Legend</h3>
@@ -22,6 +22,11 @@ function RelationshipGraphLegend({bands = []}) {
             </ul>
 
             <p className="rg-legend-note">A deal takes its colour from its pipeline stage.</p>
+
+            <div className="rg-legend-row rg-legend-single">
+                <span className="rg-swatch rg-swatch--single-threaded" aria-hidden="true"/>
+                <span className="rg-legend-label">Deal linked to exactly one contact</span>
+            </div>
 
             {bands.length > 0 && (
                 <>
@@ -45,6 +50,11 @@ function RelationshipGraphLegend({bands = []}) {
                             )
                         })}
                     </ul>
+                    {activityTypes.length > 0 && (
+                        <p className="rg-legend-note">
+                            Counts {activityTypes.map((type) => type.toLowerCase()).join(', ')} records.
+                        </p>
+                    )}
                 </>
             )}
         </div>

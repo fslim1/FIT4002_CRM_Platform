@@ -17,6 +17,8 @@
 // from the same number the legend describes.
 const WINDOW_DAYS = 90
 
+const ACTIVITY_TYPES = ['Email', 'Call', 'Note', 'Task']
+
 // Upper bound on drawn nodes. Applied here rather than in the browser so the
 // response payload is bounded too.
 const MAX_NODES = 150
@@ -160,6 +162,12 @@ const buildGraph = ({
         hasCompany,
     }
 
+    const usersById = new Map()
+    for (const user of users) {
+        const id = idOf(user._id)
+        if (id) usersById.set(id, user)
+    }
+
     // A contact with no company recorded cannot be grouped into an
     // account, so it draws alone with an explanation rather than inventing a
     // company node or guessing at colleagues.
@@ -167,7 +175,7 @@ const buildGraph = ({
         return {
             account,
             meta: emptyMeta({maxNodes, counts: {contacts: 1, deals: 0, salespeople: 0}}),
-            nodes: [contactNode(focusContact, {isFocus: true})],
+            nodes: [contactNode(focusContact, {isFocus: true, usersById})],
             edges: [],
             unmatchedDeals: [],
             notices: [{code: 'no-company'}],
@@ -305,12 +313,6 @@ const buildGraph = ({
     const keptDealIds = new Set(keptDeals.map((d) => idOf(d._id)))
 
     // --- Salespeople ---
-    const usersById = new Map()
-    for (const user of users) {
-        const id = idOf(user._id)
-        if (id) usersById.set(id, user)
-    }
-
     // Collected in a stable order so the cap cuts the same people every time.
     const ownsPairs = [] // [userId, contactId]
     for (const contactId of keptContactIds) {
@@ -346,7 +348,7 @@ const buildGraph = ({
 
     for (const contactId of keptContactIds) {
         const contact = contactsById.get(contactId)
-        nodes.push(contactNode(contact, {isFocus: contactId === focusId}))
+        nodes.push(contactNode(contact, {isFocus: contactId === focusId, usersById}))
 
         const count = safeCount(contact.interactionCount)
         edges.push({
@@ -365,6 +367,8 @@ const buildGraph = ({
     for (const deal of keptDeals) {
         const dealId = idOf(deal._id)
         const linked = contactIdsByDealId.get(dealId).filter((id) => keptContactIds.has(id))
+        const contactCount = contactIdsByDealId.get(dealId).length
+        const creatorId = idOf(deal.createdBy)
 
         nodes.push({
             data: {
@@ -374,9 +378,10 @@ const buildGraph = ({
                 recordId: dealId,
                 stage: deal.stage ?? null,
                 company: deal.company ?? '',
-                // How many of this account's visible contacts the deal is drawn
-                // against. A single-threaded warning can be built on this.
-                contactCount: linked.length,
+                contactCount,
+                singleThreaded: contactCount === 1,
+                creatorId,
+                creatorName: creatorId ? usersById.get(creatorId)?.fullName ?? null : null,
             },
         })
 
@@ -452,6 +457,7 @@ const buildGraph = ({
         account,
         meta: {
             windowDays: WINDOW_DAYS,
+            activityTypes: ACTIVITY_TYPES,
             bands: BANDS,
             limits: {maxNodes},
             capped,
@@ -485,8 +491,9 @@ const companyNode = (account) => ({
     },
 })
 
-const contactNode = (contact, {isFocus}) => {
+const contactNode = (contact, {isFocus, usersById = new Map()}) => {
     const count = safeCount(contact.interactionCount)
+    const ownerId = idOf(contact.owner)
     return {
         data: {
             id: contactNodeId(idOf(contact._id)),
@@ -498,12 +505,15 @@ const contactNode = (contact, {isFocus}) => {
             interactionCount: count,
             lastInteractionAt: isoOrNull(contact.lastInteractionAt),
             band: bandFor(count),
+            ownerId,
+            ownerName: ownerId ? usersById.get(ownerId)?.fullName ?? null : null,
         },
     }
 }
 
 const emptyMeta = ({maxNodes, counts}) => ({
     windowDays: WINDOW_DAYS,
+    activityTypes: ACTIVITY_TYPES,
     bands: BANDS,
     limits: {maxNodes},
     capped: false,
@@ -528,6 +538,7 @@ const assertNoDanglingEdges = (nodes, edges) => {
 
 module.exports = {
     WINDOW_DAYS,
+    ACTIVITY_TYPES,
     MAX_NODES,
     BANDS,
     STAGE_ORDER,

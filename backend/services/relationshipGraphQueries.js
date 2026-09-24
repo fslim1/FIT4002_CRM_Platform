@@ -32,9 +32,11 @@ const normalisedLiteral = (value) => normalised({$literal: String(value ?? '')})
 
 const normalisedField = (field) => normalised({$ifNull: [field, '']})
 
+const DEFAULT_ACTIVITY_TYPES = ['Email', 'Call', 'Note', 'Task']
+
 // Shared projection for contact rows. Drops `interactions` from the payload and
 // replaces it with the two numbers the graph actually needs.
-const contactProjection = (cutoff) => ({
+const contactProjection = (cutoff, activityTypes = DEFAULT_ACTIVITY_TYPES) => ({
     $project: {
         fullName: 1,
         nameKey: 1,
@@ -47,7 +49,12 @@ const contactProjection = (cutoff) => ({
                 $filter: {
                     input: {$ifNull: ['$interactions', []]},
                     as: 'i',
-                    cond: {$gte: ['$$i.date', cutoff]},
+                    cond: {
+                        $and: [
+                            {$gte: ['$$i.date', cutoff]},
+                            {$in: ['$$i.type', activityTypes]},
+                        ],
+                    },
                 },
             },
         },
@@ -61,7 +68,17 @@ const contactProjection = (cutoff) => ({
         // an array, so an absent field yields null instead of an error.
         lastInteractionAt: {
             $max: {
-                $map: {input: {$ifNull: ['$interactions', []]}, as: 'i', in: '$$i.date'},
+                $map: {
+                    input: {
+                        $filter: {
+                            input: {$ifNull: ['$interactions', []]},
+                            as: 'i',
+                            cond: {$in: ['$$i.type', activityTypes]},
+                        },
+                    },
+                    as: 'i',
+                    in: '$$i.date',
+                },
             },
         },
     },
@@ -83,7 +100,13 @@ const contactProjection = (cutoff) => ({
  * matching every other contact whose company is also blank: those are not
  * colleagues, they are unrelated records that happen to share a gap.
  */
-const contactsPipeline = ({scopeFilter, focusId, companyRaw, cutoff}) => {
+const contactsPipeline = ({
+    scopeFilter,
+    focusId,
+    companyRaw,
+    cutoff,
+    activityTypes = DEFAULT_ACTIVITY_TYPES,
+}) => {
     const hasCompany = String(companyRaw ?? '').trim() !== ''
 
     const accountMatch = hasCompany
@@ -94,7 +117,7 @@ const contactsPipeline = ({scopeFilter, focusId, companyRaw, cutoff}) => {
         {$match: {$or: [scopeFilter, {_id: focusId}]}},
         {$addFields: {companyKey: normalisedField('$company'), nameKey: normalisedField('$fullName')}},
         {$match: accountMatch},
-        contactProjection(cutoff),
+        contactProjection(cutoff, activityTypes),
     ]
 }
 

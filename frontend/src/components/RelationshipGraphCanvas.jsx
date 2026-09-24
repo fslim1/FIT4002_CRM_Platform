@@ -48,6 +48,8 @@ function RelationshipGraphCanvas({elements, onOpenContact, onOpenDeal, onSelecti
     const [tooltip, setTooltip] = useState(null)
     const [renderError, setRenderError] = useState(null)
     const [namesHidden, setNamesHidden] = useState(false)
+    const [inspectMode, setInspectMode] = useState(false)
+    const inspectModeRef = useRef(false)
 
     // Cytoscape handlers are registered once per element set. Reading the
     // callbacks through a ref keeps the graph from being torn down and rebuilt
@@ -137,13 +139,16 @@ function RelationshipGraphCanvas({elements, onOpenContact, onOpenDeal, onSelecti
                     handlers.current.onSelectionChange?.(null)
                 })
 
-                // Deliberately NO double-click-to-open. Cytoscape raises
-                // dbltap whenever two taps land on the same node inside its
-                // threshold, which two ordinary exploratory clicks do easily,
-                // and navigating away mid-exploration loses the viewer's place.
-                // Opening a record is the selection card's labelled button
-                // instead: one obvious affordance, impossible to hit by
-                // accident.
+                // A normal click opens a CRM record. Inspect mode leaves the
+                // click available for Cytoscape's selection/highlighting.
+                // Cytoscape does not emit `tap` after a drag, so repositioning
+                // a node cannot navigate by accident.
+                cy.on('tap', 'node[kind = "contact"], node[kind = "deal"]', (event) => {
+                    if (inspectModeRef.current) return
+                    const data = event.target.data()
+                    if (data.kind === 'contact') handlers.current.onOpenContact?.(data.recordId)
+                    if (data.kind === 'deal') handlers.current.onOpenDeal?.(data.recordId)
+                })
 
                 // Without this the graph renders against stale dimensions after
                 // the window or the panel changes size.
@@ -189,6 +194,13 @@ function RelationshipGraphCanvas({elements, onOpenContact, onOpenDeal, onSelecti
         setTooltip(null)
     }, [])
 
+    const toggleInspectMode = useCallback(() => {
+        setInspectMode((active) => {
+            inspectModeRef.current = !active
+            return !active
+        })
+    }, [])
+
     if (renderError) {
         return (
             <div className="rg-canvas-wrap">
@@ -227,8 +239,20 @@ function RelationshipGraphCanvas({elements, onOpenContact, onOpenDeal, onSelecti
                     Reset view
                 </button>
 
+                <button
+                    type="button"
+                    className="rg-btn rg-btn--ghost rg-inspect-toggle"
+                    aria-pressed={inspectMode}
+                    onClick={toggleInspectMode}
+                >
+                    {inspectMode ? 'Finish inspecting' : 'Inspect connections'}
+                </button>
+
                 {namesHidden && (
                     <span className="rg-canvas-hint">Zoom in or hover to see names</span>
+                )}
+                {inspectMode && (
+                    <span className="rg-canvas-hint">Click a node to highlight its connections</span>
                 )}
             </div>
 

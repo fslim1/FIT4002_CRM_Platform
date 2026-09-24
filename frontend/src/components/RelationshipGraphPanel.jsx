@@ -39,6 +39,23 @@ const errorText = (error) => {
     return error?.response?.data?.message || 'The relationship graph could not be loaded.'
 }
 
+const formatContactDate = (value) => {
+    if (!value) return 'No contact recorded'
+    const date = new Date(value)
+    if (Number.isNaN(date.getTime())) return 'Unknown'
+    return date.toLocaleDateString(undefined, {day: 'numeric', month: 'short', year: 'numeric'})
+}
+
+const ownerText = (record) => {
+    if (!record?.ownerId) return 'Unassigned'
+    return record.ownerName || 'Owner record unavailable'
+}
+
+const creatorText = (record) => {
+    if (!record?.creatorId) return 'Creator unavailable'
+    return record.creatorName || 'Creator record unavailable'
+}
+
 function RelationshipGraphPanel({customerId, customerName, onClose}) {
     const [data, setData] = useState(null)
     const [loading, setLoading] = useState(true)
@@ -102,8 +119,9 @@ function RelationshipGraphPanel({customerId, customerName, onClose}) {
     // hidden behind an overlay the viewer then has to dismiss.
     const openContact = useCallback(
         (recordId) => {
-            if (!recordId || recordId === customerId) return
+            if (!recordId) return
             onCloseRef.current?.()
+            if (recordId === customerId) return
             navigate(`/customers/${recordId}`)
         },
         [customerId, navigate]
@@ -128,6 +146,7 @@ function RelationshipGraphPanel({customerId, customerName, onClose}) {
 
     const contactNodes = (data?.nodes || []).filter((node) => node.data.kind === 'contact')
     const dealNodes = (data?.nodes || []).filter((node) => node.data.kind === 'deal')
+    const singleThreadedDeals = dealNodes.filter((node) => node.data.singleThreaded)
 
     return (
         <div
@@ -205,16 +224,34 @@ function RelationshipGraphPanel({customerId, customerName, onClose}) {
                                 )}
 
                                 {selected.kind === 'contact' && (
-                                    <p className="rg-selection-stat">
-                                        {selected.interactionCount} interaction
-                                        {selected.interactionCount === 1 ? '' : 's'} in the last 90 days
-                                    </p>
+                                    <>
+                                        <p className="rg-selection-stat">
+                                            Owner: <strong>{ownerText(selected)}</strong>
+                                        </p>
+                                        <p className="rg-selection-stat">
+                                            {selected.interactionCount} interaction
+                                            {selected.interactionCount === 1 ? '' : 's'} in the last 90 days
+                                        </p>
+                                        <p className="rg-selection-stat">
+                                            Last contact: {formatContactDate(selected.lastInteractionAt)}
+                                        </p>
+                                    </>
                                 )}
                                 {selected.kind === 'deal' && (
-                                    <p className="rg-selection-stat">
-                                        Drawn against {selected.contactCount} contact
-                                        {selected.contactCount === 1 ? '' : 's'} you can see
-                                    </p>
+                                    <>
+                                        <p className="rg-selection-stat">
+                                            Created by: <strong>{creatorText(selected)}</strong>
+                                        </p>
+                                        <p className="rg-selection-stat">
+                                            Linked to {selected.contactCount} distinct contact
+                                            {selected.contactCount === 1 ? '' : 's'} in this account
+                                        </p>
+                                        {selected.singleThreaded && (
+                                            <p className="rg-single-warning">
+                                                Single-threaded: build a second relationship for this deal.
+                                            </p>
+                                        )}
+                                    </>
                                 )}
 
                                 {selected.kind === 'contact' && selected.isFocus && (
@@ -248,7 +285,44 @@ function RelationshipGraphPanel({customerId, customerName, onClose}) {
                             </div>
                         )}
 
-                        {data && <RelationshipGraphLegend bands={data.meta?.bands}/>}
+                        {data && (
+                            <RelationshipGraphLegend
+                                bands={data.meta?.bands}
+                                activityTypes={data.meta?.activityTypes}
+                            />
+                        )}
+
+                        {data && (
+                            <div className="rg-rail-section rg-single-section">
+                                <h3 className="rg-rail-title">
+                                    Single-contact deals ({singleThreadedDeals.length})
+                                </h3>
+                                <p className="rg-rail-context">
+                                    Based only on the contacts and deals you can see.
+                                </p>
+                                {singleThreadedDeals.length === 0 ? (
+                                    <p className="rg-rail-empty">
+                                        No drawn deal depends on exactly one contact.
+                                    </p>
+                                ) : (
+                                    <ul className="rg-single-list">
+                                        {singleThreadedDeals.map((node) => (
+                                            <li key={node.data.id} className="rg-single-item">
+                                                <button
+                                                    type="button"
+                                                    className="rg-record-link"
+                                                    onClick={() => openDeal(node.data.recordId)}
+                                                >
+                                                    {node.data.label}
+                                                    <FiArrowRight aria-hidden="true"/>
+                                                </button>
+                                                <span>Linked to one distinct contact</span>
+                                            </li>
+                                        ))}
+                                    </ul>
+                                )}
+                            </div>
+                        )}
 
                         {data && (
                             <div className="rg-rail-section">
@@ -261,7 +335,14 @@ function RelationshipGraphPanel({customerId, customerName, onClose}) {
                                     <ul className="rg-unmatched-list">
                                         {unmatched.map((deal) => (
                                             <li key={deal.id} className="rg-unmatched-item">
-                                                <span className="rg-unmatched-name">{deal.name}</span>
+                                                <button
+                                                    type="button"
+                                                    className="rg-record-link rg-unmatched-name"
+                                                    onClick={() => openDeal(deal.id)}
+                                                >
+                                                    {deal.name}
+                                                    <FiArrowRight aria-hidden="true"/>
+                                                </button>
                                                 {deal.stage && (
                                                     <span className="rg-unmatched-stage">{deal.stage}</span>
                                                 )}
@@ -319,11 +400,15 @@ function RelationshipGraphPanel({customerId, customerName, onClose}) {
                                             {node.data.subtitle ? `, ${node.data.subtitle}` : ''}:{' '}
                                             {node.data.interactionCount} interaction
                                             {node.data.interactionCount === 1 ? '' : 's'} in the last 90 days.
+                                            {' '}Last contact: {formatContactDate(node.data.lastInteractionAt)}.
+                                            {' '}Owner: {ownerText(node.data)}.
                                         </li>
                                     ))}
                                     {dealNodes.map((node) => (
                                         <li key={node.data.id}>
-                                            Deal: {node.data.label}, stage {node.data.stage}.
+                                            Deal: {node.data.label}, stage {node.data.stage}, created by{' '}
+                                            {creatorText(node.data)}, linked to {node.data.contactCount} distinct
+                                            contact{node.data.contactCount === 1 ? '' : 's'}.
                                         </li>
                                     ))}
                                 </ul>

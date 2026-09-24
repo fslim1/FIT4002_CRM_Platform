@@ -138,6 +138,14 @@ export const graphStylesheet = [
         },
     },
     {
+        selector: 'node[kind = "deal"][?singleThreaded]',
+        style: {
+            'border-width': 5,
+            'border-color': '#C0392B',
+            'border-style': 'solid',
+        },
+    },
+    {
         selector: 'node[kind = "salesperson"]',
         style: {
             shape: 'triangle',
@@ -168,7 +176,11 @@ export const graphStylesheet = [
         style: {width: 2, 'line-color': '#A0AEC0'},
     },
     {
-        selector: 'edge[kind = "owns"], edge[kind = "created"]',
+        selector: 'edge[kind = "owns"]',
+        style: {width: 2, 'line-color': '#6B4E9B'},
+    },
+    {
+        selector: 'edge[kind = "created"]',
         style: {width: 1.5, 'line-color': '#B7A3D6', 'line-style': 'dotted'},
     },
 

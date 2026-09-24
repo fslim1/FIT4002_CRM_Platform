@@ -2,15 +2,18 @@ const mongoose = require('mongoose')
 
 const Customer = require('../models/Customer')
 const Deal = require('../models/Deal')
+const Task = require('../models/Task')
 const User = require('../models/User')
 const {
     getVisibleCustomerFilter,
     getVisibleDealFilter,
     canViewCustomer,
     seesEverything,
+    getCompanyUserIds,
+    getTeamMemberIds,
 } = require('../middleware/teamScope')
 const {hasPermission} = require('../middleware/permissions')
-const {buildGraph, cutoffFrom} = require('../services/relationshipGraph')
+const {ACTIVITY_TYPES, buildGraph, cutoffFrom} = require('../services/relationshipGraph')
 const {contactsPipeline, dealsPipeline} = require('../services/relationshipGraphQueries')
 
 // Describes the viewer's reach so the panel can say whose records the graph was
@@ -75,6 +78,7 @@ const getAccountGraph = async (req, res) => {
                 focusId: focus._id,
                 companyRaw,
                 cutoff,
+                activityTypes: ACTIVITY_TYPES,
             })
         )
 
@@ -90,7 +94,34 @@ const getAccountGraph = async (req, res) => {
             })
         )
 
-        // Every id here came from a record already inside the viewer's scope.
+        const contactIds = contacts
+            .map((contact) => contact._id)
+            .filter((id) => mongoose.isValidObjectId(id))
+        const dealIds = deals
+            .map((deal) => deal._id)
+            .filter((id) => mongoose.isValidObjectId(id))
+
+        let linkedTasks = []
+        if (contactIds.length > 0 && dealIds.length > 0) {
+            let visibleTaskUserIds
+            if (seesEverything(req.user)) {
+                visibleTaskUserIds = await getCompanyUserIds(req.user)
+            } else if (req.user.role === 'Supervisor') {
+                visibleTaskUserIds = await getTeamMemberIds(req.user)
+            } else {
+                visibleTaskUserIds = [req.user._id]
+            }
+
+            linkedTasks = await Task.find({
+                customer: {$in: contactIds},
+                deal: {$in: dealIds},
+                $or: [
+                    {createdBy: {$in: visibleTaskUserIds}},
+                    {assignedTo: {$in: visibleTaskUserIds}},
+                ],
+            }).select('customer deal').lean()
+        }
+
         const userIds = [
             ...new Set(
                 [
@@ -110,7 +141,11 @@ const getAccountGraph = async (req, res) => {
         const focusContact = contacts.find((c) => String(c._id) === String(focus._id))
         if (!focusContact) return res.status(404).json({message: 'Customer not found'})
 
-        const graph = buildGraph({focusContact, contacts, deals, users})
+        const dealContactLinks = linkedTasks.map((task) => ({
+            deal: task.deal,
+            contact: task.customer,
+        }))
+        const graph = buildGraph({focusContact, contacts, deals, users, dealContactLinks})
 
         return res.json({
             ...graph,

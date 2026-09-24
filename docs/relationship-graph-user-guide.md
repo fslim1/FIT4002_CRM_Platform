@@ -62,7 +62,7 @@ colours.
 |------------------------------|--------------------------------------------------------------------------------------------|
 | Rounded rectangle, dark blue | The **company**, at the centre of the account                                              |
 | Circle, teal                 | A **contact**, someone at that company                                                     |
-| Diamond                      | A **deal**. Its colour is its pipeline stage, the same colours as the Sales Pipeline board |
+| Diamond                      | A **deal**. Its colour is its pipeline stage; a red outline marks a deal linked to exactly one contact |
 | Triangle, purple             | A **salesperson**, one of your colleagues                                                  |
 
 The contact whose profile you opened carries an **orange ring**, so you can
@@ -102,8 +102,12 @@ a date from months ago.
 
 ### Click to focus on one record
 
-Click any node. It and everything it touches stay lit, and the rest of the
-account dims, so what that record connects to is obvious at a glance.
+Click a contact to open its customer profile, or click a deal to open it in the
+Sales Pipeline. Dragging a node only moves it and never opens the record.
+
+To inspect the graph without leaving it, choose **Inspect connections**, then
+click any node. It and everything it touches stay lit while the rest of the
+account dims. Choose **Finish inspecting** to return to click-through mode.
 
 ![Ravi Patel selected: his company, his deal and his salesperson stay lit while the rest of the account dims](images/relationship-graph/05b-selection-canvas.png)
 
@@ -175,8 +179,9 @@ lose touch with while deals are open.
 without reading any labels: Battery retrofit in Negotiation, Solar grid
 expansion at Proposal Made, Grid audit at Demo Scheduled.
 
-**Each of those deals hangs off one contact.** Every deal has a single faint
-line into a contact. Battery retrofit runs through Ravi Patel alone.
+**Each of those deals hangs off one contact.** Every deal has a red outline and
+a single faint line into a contact. The **Single-contact deals** list calls out
+the same gap and opens the deal in the pipeline.
 
 **A fourth deal is not on the graph at all**, and the rail says why. That is the
 next section.
@@ -281,7 +286,7 @@ Its **Customer** field does not match a contact on this account. Look at
 on it.
 
 **What counts as an interaction?**
-Anything logged against a contact's profile: a call, an email, a note or a task.
+Calls, emails, notes and tasks logged against a contact's profile.
 The graph counts those from the last 90 days.
 
 **Can I use a keyboard to move around the graph?**
