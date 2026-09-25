@@ -15,10 +15,10 @@ const RISK_STYLES = {
 function DealCard({deal, onClick, style, onDragStart}) {
     const priorityStyle = PRIORITY_STYLES[deal.priority] || PRIORITY_STYLES.Medium;
 
-    const rawRisk = deal.riskLevel ?? deal.risk ?? deal.aiRisk ?? deal.dealRisk ?? "";
+    const rawRisk = String(deal.riskLevel || '').trim().toLowerCase();
     const riskLevel = typeof rawRisk === "string" ? rawRisk.trim() : "";
-    const normalizedRisk = ["Low", "Medium", "High"].includes(riskLevel)? riskLevel: "";
-    const risk = normalizedRisk ? RISK_STYLES[normalizedRisk] : null;
+    const normalizedKey = rawRisk === 'high' ? 'High' : rawRisk === 'medium' ? 'Medium' : 'Low';
+    const risk = RISK_STYLES[normalizedKey];
 
     const handleDragStart = (e) => {
         e.dataTransfer.setData("dealId", deal._id);
@@ -56,20 +56,6 @@ function DealCard({deal, onClick, style, onDragStart}) {
                     >
                         {deal.priority}
                     </span>
-                        
-                    {/* {normalizedRisk && riskStyle && (
-                        <span
-                            className="deal-risk-badge"
-                            title={`${normalizedRisk} Risk`}
-                            style={{
-                                backgroundColor: riskStyle.bg,
-                                border: `1px solid ${riskStyle.border}`,
-                                color: riskStyle.color,
-                            }}
-                        >
-                            {riskStyle.letter}
-                        </span>
-                    )} */}
                 </div>
             </div>
 

@@ -1,6 +1,7 @@
 import api from './client'
 
 export const getDeals = (params = {}) => api.get('/deals', { params }).then(r => r.data)
+export const getDealRiskScores = () => api.get('/deals/risks').then(r => r.data)
 export const createDeal = (payload) => api.post('/deals', payload).then(r => r.data)
 export const updateDealStage = (dealId, stage) => api.patch(`/deals/${dealId}/stage`, { stage }).then(r => r.data)
 export const markDealOutcome = (dealId, outcome) => api.patch(`/deals/${dealId}/outcome`, { outcome }).then(r => r.data)

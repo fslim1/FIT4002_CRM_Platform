@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import "../styles/SalesPipeline.css";
 import DealCard from "../components/DealCard";
 import DealDetailModal from "../components/DealDetailModal";
-import { getDeals, createDeal, updateDealStage, markDealOutcome, getDealLogs, deleteDeal } from "../api/deals";
+import { getDeals, getDealRiskScores, createDeal, updateDealStage, markDealOutcome, getDealLogs, deleteDeal } from "../api/deals";
 import { useAuth } from "@/context/auth";
 import {can} from "@/lib/permissions";
 import { fetchMyTeam, fetchTeams } from "../api/teams";
@@ -22,7 +22,7 @@ const INITIAL_FORM = {
     assignee: "", customer: ""
 };
 
-const SHOW_MOCK_DEALS = true;
+const SHOW_MOCK_DEALS = false;
 
 const MOCK_DEALS = [
     {
@@ -135,29 +135,48 @@ useEffect(() => {
 
 // Load deals whenever filters change
 useEffect(() => {
-    if (SHOW_MOCK_DEALS) {
-        setDeals(MOCK_DEALS);
-        setError('Mock deal data is enabled for UI testing.');
-        setLoading(false);
-        return;
-    }
+  if (SHOW_MOCK_DEALS) {
+    setDeals(MOCK_DEALS);
+    setError('Mock deal data is enabled for UI testing.');
+    setLoading(false);
+    return;
+  }
 
-    setLoading(true);
-    const params = {};
-    if (userFilter) params.userId = userFilter;
-    else if (teamFilter) params.teamId = teamFilter;
+  setLoading(true);
+  const params = {};
+  if (userFilter) params.userId = userFilter;
+  else if (teamFilter) params.teamId = teamFilter;
 
-    getDeals(params)
-        .then(data => {
-            //setDeals(data);
-            setDeals(Array.isArray(data) ? data : []);
-            setLoading(false);
-        })
-        .catch(err => {
-            console.error(err);
-            setError('Failed to load deals');
-            setLoading(false);
-        });
+  Promise.all([
+    getDeals(params),
+    getDealRiskScores(),
+  ])
+    .then(([dealsData, riskMap = {}]) => {
+      const dealList = Array.isArray(dealsData) ? dealsData : [];
+
+      const mappedDeals = dealList.map((deal) => {
+        const dealKey = String(deal._id || deal.id);
+        const risk = riskMap[dealKey];
+
+        return {
+          ...deal,
+          // If risk exists in dealriskscores, use it. Otherwise, default to Low.
+          riskLevel: risk?.riskLevel || 'Low',
+          riskScore: risk?.score ?? 0,
+          riskReason: risk?.reason || 'Standard deal progression (Default)',
+        };
+      });
+
+      setDeals(mappedDeals);
+      setError(null);
+    })
+    .catch((err) => {
+      console.error('Pipeline load error:', err);
+      setError('Failed to load deals and risk data');
+    })
+    .finally(() => {
+      setLoading(false);
+    });
 }, [userFilter, teamFilter]);
 
     const handleAddLead = () => setShowModal(true);

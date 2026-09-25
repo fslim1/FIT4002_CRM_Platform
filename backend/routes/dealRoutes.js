@@ -6,6 +6,7 @@ const {requirePermission} = require('../middleware/permissions')
 const DealLog = require('../models/DealLog')
 const Customer = require('../models/Customer')
 const User = require('../models/User')
+const DealRiskScore = require('../models/DealRiskScore')
 const {
   getVisibleDealFilter,
   getVisibleCustomerFilter,
@@ -71,6 +72,40 @@ router.get('/', requireAuth, async (req, res) => {
     res.status(500).json({ message: 'Failed to fetch deals' })
   }
 })
+
+// GET all visible deal risk scores keyed by dealId
+router.get('/risks', requireAuth, async (req, res) => {
+  try {
+    // 1. Prevent aggressive browser 304 caching while developing
+    res.set({
+      'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
+      'Pragma': 'no-cache',
+      'Expires': '0',
+    });
+
+    // 2. Fetch all risk scores directly from the collection
+    const risks = await DealRiskScore.find({}).lean();
+
+    // 3. Map into a dictionary keyed by stringified dealId
+    const riskByDealId = {};
+    risks.forEach((risk) => {
+      if (risk.dealId) {
+        riskByDealId[String(risk.dealId)] = {
+          dealId: String(risk.dealId),
+          riskLevel: risk.riskLevel || 'Low',
+          score: risk.score ?? 0,
+          reason: risk.reason || '',
+          updatedAt: risk.updatedAt,
+        };
+      }
+    });
+
+    return res.status(200).json(riskByDealId);
+  } catch (error) {
+    console.error('Failed to fetch deal risks:', error);
+    return res.status(500).json({ message: 'Failed to fetch deal risks' });
+  }
+});
 
 // GET all status logs across visible deals (for Deal History)
 router.get('/logs', requireAuth, async (req, res) => {
