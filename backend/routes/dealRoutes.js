@@ -285,7 +285,7 @@ router.get('/:id/risk-factors', requireAuth, async (req, res) => {
       return res.status(403).json({ message: 'You do not have access to this deal' })
 
     const [daysSinceActivity, overdueTaskCount] = await Promise.all([
-      getDaysSinceActivity(deal),
+      getDaysSinceActivity(deal, req.user.companyName),
       getOverdueTaskCount(deal._id),
     ])
 
@@ -312,7 +312,7 @@ router.get('/:id/risk-score', requireAuth, async (req, res) => {
       return res.status(403).json({ message: 'You do not have access to this deal' })
 
     const companyKey = getCompanyKey(req.user)
-    const result = await computeRiskScore(deal, companyKey)
+    const result = await computeRiskScore(deal, companyKey, req.user.companyName)
 
     await DealRiskScore.findOneAndUpdate(
       { companyKey, deal: deal._id },

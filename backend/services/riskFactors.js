@@ -16,11 +16,12 @@ const getDaysInStage = (deal) => {
 // H4: days since the most recent logged interaction on the deal's customer.
 // Customer.interactions[].date is the real field (see models/Customer.js),
 // defaulting to Date.now on creation, so every interaction has one.
-const getDaysSinceActivity = async (deal) => {
+const getDaysSinceActivity = async (deal, companyName) => {
   if (!deal.customer) return {days: null, neverContacted: true}
 
   const customer = await Customer.findOne({
     fullName: {$regex: `^${escapeRegex(deal.customer)}$`, $options: 'i'},
+    company: {$regex: `^${escapeRegex(companyName || '')}$`, $options: 'i'},
   }).select('interactions')
 
   if (!customer || !customer.interactions || customer.interactions.length === 0) {

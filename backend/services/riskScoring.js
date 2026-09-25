@@ -21,7 +21,7 @@ const getWeightSetting = async (companyKey, key, fallback) => {
 
 // H7: combines H3/H4/H5's raw factors into one deterministic Low/Medium/High
 // score, using the company's own benchmarks (H6) and weights.
-const computeRiskScore = async (deal, companyKey) => {
+const computeRiskScore = async (deal, companyKey, companyName) => {
     // Closed deals aren't meaningfully "at risk" — the client's own tables
     // only define behaviour for the five active stages.
     if (!SCORABLE_STAGES.includes(deal.stage)) {
@@ -35,7 +35,7 @@ const computeRiskScore = async (deal, companyKey) => {
 
     const [daysSinceActivityResult, overdueTaskCount, stageWeights, inactivityThresholds, inactivityPoints, overdueTaskPoints, labelThresholds] =
         await Promise.all([
-            getDaysSinceActivity(deal),
+            getDaysSinceActivity(deal, companyName),
             getOverdueTaskCount(deal._id),
             getWeightSetting(companyKey, 'stageRiskPoints', DEFAULT_STAGE_RISK_POINTS),
             getWeightSetting(companyKey, 'inactivityThresholds', DEFAULT_INACTIVITY_THRESHOLDS),
