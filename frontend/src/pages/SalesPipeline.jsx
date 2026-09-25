@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import "../styles/SalesPipeline.css";
 import DealCard from "../components/DealCard";
 import DealDetailModal from "../components/DealDetailModal";
-import { getDeals, createDeal, updateDealStage, markDealOutcome, getDealLogs, deleteDeal } from "../api/deals";
-import {useAuth} from "@/context/auth";
+import { getDeals, getDealRiskScores, createDeal, updateDealStage, markDealOutcome, getDealLogs, deleteDeal } from "../api/deals";
+import { useAuth } from "@/context/auth";
 import {can} from "@/lib/permissions";
 import {fetchMyTeam, fetchTeams} from "../api/teams";
 import {fetchUsers} from "../api/users";
@@ -22,11 +22,71 @@ const INITIAL_FORM = {
     assignee: "", customer: ""
 };
 
+const SHOW_MOCK_DEALS = false;
+
+const MOCK_DEALS = [
+    {
+        _id: 'mock-1',
+        name: 'TranXenergy Solar Expansion',
+        company: 'TranXenergy',
+        price: 185000,
+        priority: 'High',
+        probability: 72,
+        stage: 'Negotiation',
+        daysAgo: 12,
+        riskLevel: 'High',
+    },
+    {
+        _id: 'mock-2',
+        name: 'Battery Storage Pilot',
+        company: 'GreenVolt',
+        price: 96000,
+        priority: 'Medium',
+        probability: 54,
+        stage: 'Proposal Made',
+        daysAgo: 8,
+        riskLevel: 'Medium',
+    },
+    {
+        _id: 'mock-3',
+        name: 'Fleet Electrification Upgrade',
+        company: 'Metro Transit',
+        price: 240000,
+        priority: 'High',
+        probability: 68,
+        stage: 'Demo Scheduled',
+        daysAgo: 4,
+        riskLevel: 'Low',
+    },
+    {
+        _id: 'mock-4',
+        name: 'Commercial EV Charging Rollout',
+        company: 'Northline Logistics',
+        price: 135000,
+        priority: 'Low',
+        probability: 41,
+        stage: 'Contact Made',
+        daysAgo: 16,
+        riskLevel: 'Medium',
+    },
+    {
+        _id: 'mock-5',
+        name: 'Grid Resilience Quote',
+        company: 'Summit Utilities',
+        price: 205000,
+        priority: 'Medium',
+        probability: 35,
+        stage: 'Qualified',
+        daysAgo: 21,
+        riskLevel: 'High',
+    },
+];
+
 function SalesPipeline() {
     const {user} = useAuth();
     // The delete option shows for Admins or people granted Delete Records
     const canDeleteRecords = can(user, 'deleteRecords');
-    const [deals, setDeals] = useState([]);
+    const [deals, setDeals] = useState(SHOW_MOCK_DEALS ? MOCK_DEALS : []);
     const [showModal, setShowModal] = useState(false);
     const [form, setForm] = useState(INITIAL_FORM);
     const [loading, setLoading] = useState(true);
@@ -74,23 +134,44 @@ function SalesPipeline() {
     }, [isAdmin, isSupervisor, canViewAllData]);
 
 // Load deals whenever filters change
-    useEffect(() => {
-        setLoading(true);
-        const params = {};
-        if (userFilter) params.userId = userFilter;
-        else if (teamFilter) params.teamId = teamFilter;
+useEffect(() => {
 
-        getDeals(params)
-            .then(data => {
-                setDeals(data);
-                setLoading(false);
-            })
-            .catch(err => {
-                console.error(err);
-                setError('Failed to load deals');
-                setLoading(false);
-            });
-    }, [userFilter, teamFilter]);
+  setLoading(true);
+  const params = {};
+  if (userFilter) params.userId = userFilter;
+  else if (teamFilter) params.teamId = teamFilter;
+
+  Promise.all([
+    getDeals(params),
+    getDealRiskScores(),
+  ])
+    .then(([dealsData, riskMap = {}]) => {
+      const dealList = Array.isArray(dealsData) ? dealsData : [];
+
+      const mappedDeals = dealList.map((deal) => {
+        const dealKey = String(deal._id || deal.id);
+        const risk = riskMap[dealKey];
+
+        return {
+          ...deal,
+          // If risk exists in dealriskscores, use it. Otherwise, default to Low.
+          riskLevel: risk?.riskLevel || 'Low',
+          riskScore: risk?.score ?? 0,
+          riskReason: risk?.reason || 'Standard deal progression (Default)',
+        };
+      });
+
+      setDeals(mappedDeals);
+      setError(null);
+    })
+    .catch((err) => {
+      console.error('Pipeline load error:', err);
+      setError('Failed to load deals and risk data');
+    })
+    .finally(() => {
+      setLoading(false);
+    });
+}, [userFilter, teamFilter]);
 
     const handleAddLead = () => setShowModal(true);
     const handleCloseModal = () => {

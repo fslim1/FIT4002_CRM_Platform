@@ -6,8 +6,19 @@ const PRIORITY_STYLES = {
     Low: {bg: "#F0F8FF", border: "#66B3FF", color: "#0066CC"},
 };
 
+const RISK_STYLES = {
+  High: { stripe: "#EF4444", bg: "#FEF2F2", text: "#B91C1C", label: "High Risk", dot: "#EF4444" },
+  Medium: { stripe: "#F59E0B", bg: "#FFFBEB", text: "#B45309", label: "Med Risk", dot: "#F59E0B" },
+  Low: { stripe: "#10B981", bg: "#ECFDF5", text: "#047857", label: "Low Risk", dot: "#10B981" },
+};
+
 function DealCard({deal, onClick, style, onDragStart}) {
     const priorityStyle = PRIORITY_STYLES[deal.priority] || PRIORITY_STYLES.Medium;
+
+    const rawRisk = String(deal.riskLevel || '').trim().toLowerCase();
+    const riskLevel = typeof rawRisk === "string" ? rawRisk.trim() : "";
+    const normalizedKey = rawRisk === 'high' ? 'High' : rawRisk === 'medium' ? 'Medium' : 'Low';
+    const risk = RISK_STYLES[normalizedKey];
 
     const handleDragStart = (e) => {
         e.dataTransfer.setData("dealId", deal._id);
@@ -33,16 +44,19 @@ function DealCard({deal, onClick, style, onDragStart}) {
 
             <div className="deal-company-row">
                 <span className="deal-company">{deal.company}</span>
-                <span
-                    className="deal-priority-badge"
-                    style={{
-                        backgroundColor: priorityStyle.bg,
-                        border: `0.5px solid ${priorityStyle.border}`,
-                        color: priorityStyle.color,
-                    }}
-                >
-          {deal.priority}
-        </span>
+
+                <div className="deal-badges">
+                    <span
+                        className="deal-priority-badge"
+                        style={{
+                            backgroundColor: priorityStyle.bg,
+                            border: `0.5px solid ${priorityStyle.border}`,
+                            color: priorityStyle.color,
+                        }}
+                    >
+                        {deal.priority}
+                    </span>
+                </div>
             </div>
 
             <div className="deal-prob-row">
@@ -56,6 +70,20 @@ function DealCard({deal, onClick, style, onDragStart}) {
             </div>
 
             <div className="deal-divider"/>
+
+            {/* Footer: View action on the left, subtle AI Risk indicator on the right */}
+            <div className="deal-footer-row">
+                {risk && (
+                <div 
+                    className="deal-risk-indicator"
+                    title={deal.riskReason || `${risk.label}: Calculated based on stage dwell time`}
+                    style={{ backgroundColor: risk.bg, color: risk.text }}
+                >
+                    <span className="deal-risk-dot" style={{ backgroundColor: risk.dot }} />
+                    {risk.label}
+                </div>
+                )}
+            </div>
             <div className="deal-view">View</div>
         </div>
     );
