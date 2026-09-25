@@ -1,5 +1,6 @@
 const express = require('express')
 const SystemSettings = require('../models/SystemSettings')
+const Company = require('../models/Company')
 const Team = require('../models/Team')
 const User = require('../models/User')
 const RiskBenchmark = require('../models/RiskBenchmark')
@@ -22,7 +23,7 @@ const serializeSettings = (settings) => ({
 // GET /api/settings: the requester's company settings, for any authenticated staff
 router.get('/', requireAuth, async (req, res) => {
     try {
-        const settings = await SystemSettings.getForCompany(req.user.companyName)
+        const settings = await SystemSettings.getForCompany(req.user)
         return res.json({settings: serializeSettings(settings)})
     } catch (err) {
         console.error('Get settings error:', err)
@@ -66,41 +67,50 @@ router.put('/', requireAuth, requireRole('Admin'), async (req, res) => {
             updates.companyName !== previousCompany
         )
 
-        // Renaming into another existing company would merge two companies'
-        // data, so reject when the target name is already in use elsewhere.
         if (renaming && !sameCompanyName(updates.companyName, previousCompany)) {
-            const taken = await User.findOne({
-                companyName: companyPattern(updates.companyName),
+            const taken = await Company.findOne({
+                name: new RegExp(`^${updates.companyName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}$`, 'i'),
             })
-            if (taken) {
+            if (taken && String(taken._id) !== String(req.user.companyId)) {
                 return res
                     .status(409)
                     .json({message: 'Another company already uses this name'})
             }
         }
 
-        const settings = await SystemSettings.getForCompany(previousCompany)
+        const settings = await SystemSettings.getForCompany(req.user)
         settings.set(updates)
         if (renaming) {
-            // Keep the document keyed by the new company name
             settings.companyKey = updates.companyName.toLowerCase()
         }
         await settings.save()
 
         if (renaming) {
+            if (req.user.companyId) {
+                await Company.findByIdAndUpdate(req.user.companyId, {name: updates.companyName})
+            }
             const previousPattern = companyPattern(previousCompany)
             const previousKey = previousCompany.toLowerCase()
             const newKey = updates.companyName.toLowerCase()
 
             await User.updateMany(
-                {companyName: previousPattern},
+                {
+                    $or: [
+                        {companyId: req.user.companyId},
+                        {companyName: previousPattern},
+                    ],
+                },
                 {companyName: updates.companyName}
             )
             await Team.updateMany(
-                {company: previousPattern},
+                {
+                    $or: [
+                        {companyId: req.user.companyId},
+                        {company: previousPattern},
+                    ],
+                },
                 {company: updates.companyName}
             )
-            // Keep every risk-scoring record scoped correctly under the new name.
             await Promise.all([
                 RiskBenchmark.updateMany({companyKey: previousKey}, {companyKey: newKey, companyName: updates.companyName}),
                 DealRiskScore.updateMany({companyKey: previousKey}, {companyKey: newKey}),

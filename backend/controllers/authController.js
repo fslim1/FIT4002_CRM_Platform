@@ -1,4 +1,5 @@
 const User = require('../models/User')
+const Company = require('../models/Company')
 const {signToken} = require('../middleware/auth')
 const {verifyIdToken, verifyAccessToken} = require('../services/googleAuth')
 const {verifyEmailExists} = require('../services/emailVerification')
@@ -11,6 +12,8 @@ const {
     confirmCode,
 } = require('../services/emailConfirmation')
 
+const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+
 const companyFromEmail = (email) => {
     const domain = (email.split('@')[1] || '').split('.')[0] || 'My Company'
     return domain.charAt(0).toUpperCase() + domain.slice(1)
@@ -20,6 +23,21 @@ const isValidEmail = (email) =>
     typeof email === 'string' && /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
 
 const normalizeEmail = (email) => String(email || '').toLowerCase().trim()
+
+const ensureUserCompany = async (user) => {
+    if (!user || user.companyId) return user
+    const cName = (user.companyName || 'My Company').trim()
+    let company = await Company.findOne({
+        name: new RegExp(`^${escapeRegex(cName)}$`, 'i'),
+    })
+    if (!company) {
+        company = await Company.create({name: cName})
+    }
+    user.companyId = company._id
+    user.companyName = company.name
+    await user.save()
+    return user
+}
 
 exports.signup = async (req, res) => {
     try {
@@ -66,23 +84,46 @@ exports.signup = async (req, res) => {
             return res.status(400).json({message: emailCheck.message, field: 'email'})
         }
 
+        const trimmedCompanyName = companyName.trim()
+        let company = await Company.findOne({
+            name: new RegExp(`^${escapeRegex(trimmedCompanyName)}$`, 'i'),
+        })
+        if (company) {
+            return res.status(409).json({
+                message: 'A company with this name already exists. If your company is already registered, please contact your administrator for an account invitation.',
+                field: 'companyName',
+            })
+        }
+
+        try {
+            company = await Company.create({name: trimmedCompanyName})
+        } catch (compErr) {
+            if (compErr && compErr.code === 11000) {
+                return res.status(409).json({
+                    message: 'A company with this name already exists.',
+                    field: 'companyName',
+                })
+            }
+            throw compErr
+        }
+
         const confirmationRequired = isConfirmationRequired()
 
-        // Role is always 'User' on public signup — every other role is granted
-        // by an Admin from user management.
+        // Creating a NEW company automatically assigns role = 'admin'
+        // and companyId = newlyCreatedCompany._id.
         const user = await User.create({
             fullName: fullName.trim(),
             email: normalizeEmail(email),
             password,
-            companyName: companyName.trim(),
-            role: 'User',
+            companyId: company._id,
+            companyName: company.name,
+            role: 'Admin',
             emailVerified: !confirmationRequired,
             gmailAccessToken: gmailAccessToken || null,
             isGmailLinked: Boolean(gmailAccessToken),
         })
 
-        // H6 AC2: default benchmarks exist the moment a new company appears,
-        // so scoring never starts from an empty configuration.
+        // H6 AC2: default benchmarks exist the moment a new company appears
         await seedCompanyRiskBenchmarksIfNew(user.companyName)
 
         // Without a confirmation step the account is usable straight away.
@@ -93,8 +134,6 @@ exports.signup = async (req, res) => {
 
         const sent = await issueCode(user)
         if (!sent.ok) {
-            // The account exists but no code went out; let them ask again
-            // from the verification screen rather than start over.
             return res.status(201).json({
                 verificationRequired: true,
                 email: user.email,
@@ -126,7 +165,7 @@ exports.login = async (req, res) => {
             return res.status(400).json({message: 'Email and password are required'})
         }
 
-        const user = await User.findOne({email: normalizeEmail(email)}).select('+password')
+        let user = await User.findOne({email: normalizeEmail(email)}).select('+password')
         if (!user) {
             return res.status(401).json({message: 'Invalid email or password'})
         }
@@ -136,10 +175,6 @@ exports.login = async (req, res) => {
             return res.status(401).json({message: 'Invalid email or password'})
         }
 
-        // The checks below name a specific reason for the refusal, so they run
-        // only once the password is right. Before that, every failure has to
-        // look alike, or the response tells a stranger which addresses have
-        // accounts and which of those are closed.
         if (user.isActive === false) {
             return res
                 .status(401)
@@ -153,6 +188,8 @@ exports.login = async (req, res) => {
                 email: user.email,
             })
         }
+
+        user = await ensureUserCompany(user)
 
         const token = signToken(user._id)
         return res.json({token, user: user.toSafeJSON()})
@@ -176,7 +213,7 @@ exports.verifyEmail = async (req, res) => {
                 .json({message: 'Enter the 6-digit code from your email.', field: 'code'})
         }
 
-        const user = await User.findOne({email: normalizeEmail(email)})
+        let user = await User.findOne({email: normalizeEmail(email)})
         if (!user) {
             return res
                 .status(400)
@@ -194,6 +231,7 @@ exports.verifyEmail = async (req, res) => {
             return res.status(400).json({message: result.message, field: 'code', code: result.reason})
         }
 
+        user = await ensureUserCompany(user)
         await user.populate('team', 'name')
         const token = signToken(user._id)
         return res.json({token, user: user.toSafeJSON()})
@@ -213,8 +251,6 @@ exports.resendVerification = async (req, res) => {
 
         const user = await User.findOne({email: normalizeEmail(email)})
 
-        // Unknown or already-confirmed addresses get the same answer as a
-        // successful send, so the endpoint cannot be used to find accounts.
         const generic = {
             message: 'If that account still needs confirming, a new code is on its way.',
         }
@@ -236,17 +272,17 @@ exports.resendVerification = async (req, res) => {
 }
 
 exports.me = async (req, res) => {
-    return res.json({user: req.user.toSafeJSON()})
+    let user = req.user
+    if (!user.companyId) {
+        user = await ensureUserCompany(user)
+    }
+    return res.json({user: user.toSafeJSON()})
 }
 
 exports.googleLogin = async (req, res) => {
     try {
         const {credential, gmailAccessToken} = req.body || {}
 
-        // Who the caller is has to come from a token Google issued to this
-        // application, never from the request body: an address and an account
-        // id are things anyone can type, so trusting them would let a caller
-        // sign in as whoever they named.
         let profile
         try {
             if (typeof credential === 'string' && credential) {
@@ -272,14 +308,12 @@ exports.googleLogin = async (req, res) => {
         const hasGmailSendScope = Boolean(profile.gmailSendGranted)
 
         if (user) {
-            // Reject deactivated accounts.
             if (user.isActive === false) {
                 return res
                     .status(401)
                     .json({message: 'This account has been deactivated. Please contact your administrator.'})
             }
             if (!user.googleId) user.googleId = profile.googleId
-            // Google has already proven the address belongs to this person.
             if (!user.emailVerified) user.emailVerified = true
             if (hasGmailSendScope && gmailAccessToken) {
                 user.gmailAccessToken = gmailAccessToken
@@ -287,14 +321,25 @@ exports.googleLogin = async (req, res) => {
             } else if (!hasGmailSendScope && user.gmailAccessToken) {
                 user.isGmailLinked = true
             }
+            user = await ensureUserCompany(user)
             await user.save()
         } else {
-            const companyName = companyFromEmail(profile.email)
+            const cName = companyFromEmail(profile.email)
+            let company = await Company.findOne({
+                name: new RegExp(`^${escapeRegex(cName)}$`, 'i'),
+            })
+            let isNewCompany = false
+            if (!company) {
+                company = await Company.create({name: cName})
+                isNewCompany = true
+            }
+
             user = await User.create({
                 fullName: profile.fullName,
                 email: profile.email,
-                companyName,
-                role: 'User',
+                companyId: company._id,
+                companyName: company.name,
+                role: isNewCompany ? 'Admin' : 'User',
                 emailVerified: true,
                 authProvider: 'google',
                 googleId: profile.googleId,
@@ -302,8 +347,7 @@ exports.googleLogin = async (req, res) => {
                 isGmailLinked: hasGmailSendScope && Boolean(gmailAccessToken),
             })
 
-            // H6 AC2: same default-seeding on Google's new-company path.
-            await seedCompanyRiskBenchmarksIfNew(companyName)
+            await seedCompanyRiskBenchmarksIfNew(company.name)
         }
 
         const token = signToken(user._id)
@@ -311,5 +355,5 @@ exports.googleLogin = async (req, res) => {
     } catch (err) {
         console.error('Google login error:', err)
         return res.status(500).json({message: 'Unable to complete Google login'})
-    }    
+    }
 }

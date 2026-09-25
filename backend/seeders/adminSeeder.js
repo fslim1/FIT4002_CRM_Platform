@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Admin Bootstrap Seeder
  * ======================
  * Creates the initial Admin user from environment variables.
@@ -46,13 +46,28 @@ if (!passwordCheck.ok) {
     process.exit(1)
 }
 
+const Company = require('../models/Company')
+
 const run = async () => {
     try {
         await mongoose.connect(MONGO_URI)
         console.log('MongoDB connected.')
 
+        const companyName = ADMIN_COMPANY.trim()
+        const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+        let company = await Company.findOne({
+            name: new RegExp(`^${escapeRegex(companyName)}$`, 'i'),
+        })
+        if (!company) {
+            company = await Company.create({name: companyName})
+        }
+
         const existing = await User.findOne({email: ADMIN_EMAIL.toLowerCase()})
         if (existing) {
+            if (!existing.companyId) {
+                existing.companyId = company._id
+                await existing.save()
+            }
             console.log(`Admin account already exists for ${ADMIN_EMAIL}. No changes made.`)
             return
         }
@@ -61,7 +76,8 @@ const run = async () => {
             fullName: ADMIN_FULLNAME.trim(),
             email: ADMIN_EMAIL.toLowerCase().trim(),
             password: ADMIN_PASSWORD,
-            companyName: ADMIN_COMPANY.trim(),
+            companyId: company._id,
+            companyName: company.name,
             role: 'Admin',
             authProvider: 'local',
             // The seeder runs offline against the database, with no mail

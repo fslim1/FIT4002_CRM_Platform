@@ -28,11 +28,16 @@ const sameCompanyName = (a, b) =>
 // IDs of every user in the same company as `user`. Even "sees everything"
 // access (Admin / viewAllData) is bounded to the user's own company.
 const getCompanyUserIds = async (user) => {
-    const members = await User.find({
-        companyName: companyPattern(user.companyName),
-    }).select('_id')
+    if (!user) return []
+    const filter = user.companyId
+        ? {companyId: user.companyId}
+        : {companyName: companyPattern(user.companyName)}
+
+    const members = await User.find(filter).select('_id')
     const ids = members.map((m) => m._id)
-    if (!ids.some((id) => String(id) === String(user._id))) ids.push(user._id)
+    if (user._id && !ids.some((id) => String(id) === String(user._id))) {
+        ids.push(user._id)
+    }
     return ids
 }
 
