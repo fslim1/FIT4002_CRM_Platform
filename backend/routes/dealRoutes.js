@@ -6,7 +6,6 @@ const {requirePermission} = require('../middleware/permissions')
 const DealLog = require('../models/DealLog')
 const Customer = require('../models/Customer')
 const User = require('../models/User')
-const DealRiskScore = require('../models/DealRiskScore')
 const {
   getVisibleDealFilter,
   getVisibleCustomerFilter,
