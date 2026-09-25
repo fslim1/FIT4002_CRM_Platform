@@ -71,44 +71,55 @@ router.get('/', requireAuth, async (req, res) => {
   }
 })
 
-// GET all visible deal risk scores keyed by dealId
+// GET all visible deal risk scores keyed by dealId — computes fresh for
+// every visible deal (not just reading a cache), so newly created or
+// changed deals always reflect their current, real risk factors.
 router.get('/risks', requireAuth, async (req, res) => {
   try {
-    // 1. Prevent aggressive browser 304 caching while developing
     res.set({
       'Cache-Control': 'no-store, no-cache, must-revalidate, proxy-revalidate',
       'Pragma': 'no-cache',
       'Expires': '0',
     });
 
-    const companyKey = getCompanyKey(req.user);
-    const query = companyKey ? { $or: [{ companyKey }, { companyKey: { $exists: false } }] } : {};
-    const scores = await DealRiskScore.find(query).lean();
+    const scope = await getVisibleDealFilter(req.user)
+    const deals = await Deal.find(scope)
+    const companyKey = getCompanyKey(req.user)
 
-    // 3. Map into a dictionary keyed by stringified dealId
-    const riskByDealId = {};
-    scores.forEach((item) => {
-      // Support BOTH 'deal' and legacy 'dealId'
-      const id = item.deal || item.dealId;
-      if (id) {
-        riskByDealId[String(id)] = {
-          dealId: String(id),
-          riskLevel: item.riskLevel || 'Low',
-          points: item.points ?? item.score ?? 0,
-          reason: Array.isArray(item.reasons) ? item.reasons.join('; ') : (item.reason || ''),
-          calculatedAt: item.calculatedAt || item.updatedAt,
-        };
+    const riskByDealId = {}
+
+    await Promise.all(deals.map(async (deal) => {
+      const result = await computeRiskScore(deal, companyKey, req.user.companyName)
+
+      await DealRiskScore.findOneAndUpdate(
+        { companyKey, deal: deal._id },
+        {
+          companyKey,
+          deal: deal._id,
+          riskLevel: result.riskLevel,
+          points: result.points,
+          factors: result.factors,
+          reasons: result.reasons,
+          calculatedAt: new Date(),
+        },
+        { upsert: true, new: true }
+      )
+
+      riskByDealId[String(deal._id)] = {
+        dealId: String(deal._id),
+        riskLevel: result.riskLevel,
+        points: result.points,
+        reason: Array.isArray(result.reasons) ? result.reasons.join('; ') : '',
+        calculatedAt: new Date(),
       }
-    });
+    }))
 
-
-
-    return res.status(200).json(riskByDealId);
+    return res.status(200).json(riskByDealId)
   } catch (error) {
-    console.error('Failed to fetch deal risks:', error);
-    return res.status(500).json({ message: 'Failed to fetch deal risks' });
+    console.error('Failed to fetch deal risks:', error)
+    return res.status(500).json({ message: 'Failed to fetch deal risks' })
   }
-});
+})
 
 // GET all status logs across visible deals (for Deal History)
 router.get('/logs', requireAuth, async (req, res) => {
