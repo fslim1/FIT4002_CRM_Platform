@@ -156,7 +156,7 @@ useEffect(() => {
           ...deal,
           // If risk exists in dealriskscores, use it. Otherwise, default to Low.
           riskLevel: risk?.riskLevel || 'Low',
-          riskScore: risk?.score ?? 0,
+          riskScore: risk?.points ?? 0,
           riskReason: risk?.reason || 'Standard deal progression (Default)',
         };
       });

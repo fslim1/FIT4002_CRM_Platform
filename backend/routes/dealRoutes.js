@@ -81,22 +81,27 @@ router.get('/risks', requireAuth, async (req, res) => {
       'Expires': '0',
     });
 
-    // 2. Fetch all risk scores directly from the collection
-    const risks = await DealRiskScore.find({}).lean();
+    const companyKey = getCompanyKey(req.user);
+    const query = companyKey ? { $or: [{ companyKey }, { companyKey: { $exists: false } }] } : {};
+    const scores = await DealRiskScore.find(query).lean();
 
     // 3. Map into a dictionary keyed by stringified dealId
     const riskByDealId = {};
-    risks.forEach((risk) => {
-      if (risk.dealId) {
-        riskByDealId[String(risk.dealId)] = {
-          dealId: String(risk.dealId),
-          riskLevel: risk.riskLevel || 'Low',
-          score: risk.score ?? 0,
-          reason: risk.reason || '',
-          updatedAt: risk.updatedAt,
+    scores.forEach((item) => {
+      // Support BOTH 'deal' and legacy 'dealId'
+      const id = item.deal || item.dealId;
+      if (id) {
+        riskByDealId[String(id)] = {
+          dealId: String(id),
+          riskLevel: item.riskLevel || 'Low',
+          points: item.points ?? item.score ?? 0,
+          reason: Array.isArray(item.reasons) ? item.reasons.join('; ') : (item.reason || ''),
+          calculatedAt: item.calculatedAt || item.updatedAt,
         };
       }
     });
+
+
 
     return res.status(200).json(riskByDealId);
   } catch (error) {
