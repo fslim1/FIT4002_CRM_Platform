@@ -135,12 +135,6 @@ useEffect(() => {
 
 // Load deals whenever filters change
 useEffect(() => {
-  if (SHOW_MOCK_DEALS) {
-    setDeals(MOCK_DEALS);
-    setError('Mock deal data is enabled for UI testing.');
-    setLoading(false);
-    return;
-  }
 
   setLoading(true);
   const params = {};
