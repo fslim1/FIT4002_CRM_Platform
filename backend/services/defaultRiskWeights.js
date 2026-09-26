@@ -6,7 +6,10 @@
 const DEFAULT_INACTIVITY_THRESHOLDS = {warningAtDays: 8, highRiskAtDays: 15}
 const DEFAULT_STAGE_RISK_POINTS = {warning: 2, highRisk: 4}
 const DEFAULT_INACTIVITY_POINTS = {warning: 2, highRisk: 4}
-const DEFAULT_OVERDUE_TASK_POINTS = 1
+// Based on client's overdue-task ruleset: severity is based
+// on how many tasks are overdue, the overdue task's priority, and how many
+// days overdue it is, rather than a flat per-task point.
+const DEFAULT_OVERDUE_TASK_POINTS = {low: 1, warning: 2, highRisk: 4}
 const DEFAULT_LABEL_THRESHOLDS = {mediumMin: 2, highMin: 4}
 
 module.exports = {
