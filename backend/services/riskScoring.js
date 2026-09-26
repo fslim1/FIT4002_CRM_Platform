@@ -1,6 +1,6 @@
 const RiskBenchmark = require('../models/RiskBenchmark')
 const RiskWeightSetting = require('../models/RiskWeightSetting')
-const {getDaysInStage, getDaysSinceActivity, getOverdueTaskCount} = require('./riskFactors')
+const {getDaysInStage, getDaysSinceActivity, getOverdueTaskCount, getOverdueTasks} = require('./riskFactors')
 const {
     DEFAULT_INACTIVITY_THRESHOLDS,
     DEFAULT_STAGE_RISK_POINTS,
@@ -16,6 +16,30 @@ const MANUAL_DEAL_GRACE_PERIOD_MS = 3 * 24 * 60 * 60 * 1000
 const getWeightSetting = async (companyKey, key, fallback) => {
     const doc = await RiskWeightSetting.findOne({companyKey, key})
     return doc ? doc.value : fallback
+}
+
+// client's overdue-task ruleset simplified:
+//  - more than one overdue task -> High
+//  - one High-priority task overdue by more than 3 days -> High
+//  - one task overdue by 1-2 days -> Low
+//  - anything else (single task, in between) -> Warning
+const scoreOverdueTasks = (tasks, overdueTaskPoints) => {
+    if (tasks.length === 0) return {points: 0, reason: null}
+
+    if (tasks.length > 1) {
+        return {points: overdueTaskPoints.highRisk, reason: `${tasks.length} overdue tasks linked to this deal`}
+    }
+
+    const task = tasks[0]
+    const daysOverdue = Math.max(0, Math.floor((Date.now() - new Date(task.dueDate).getTime()) / (1000 * 60 * 60 * 24)))
+
+    if (task.priority === 'High' && daysOverdue > 3) {
+        return {points: overdueTaskPoints.highRisk, reason: `High-priority task overdue by ${daysOverdue} days`}
+    }
+    if (daysOverdue >= 1 && daysOverdue <= 2) {
+        return {points: overdueTaskPoints.low, reason: `1 task overdue by ${daysOverdue} day${daysOverdue > 1 ? 's' : ''}`}
+    }
+    return {points: overdueTaskPoints.warning, reason: `1 task overdue by ${daysOverdue} days`}
 }
 
 // H7: combines H3/H4/H5's raw factors into one deterministic Low/Medium/High
@@ -49,10 +73,10 @@ const computeRiskScore = async (deal, companyKey, user) => {
         }
     }
 
-    const [daysSinceActivityResult, overdueTaskCount, stageWeights, inactivityThresholds, inactivityPoints, overdueTaskPoints, labelThresholds] =
+    const [daysSinceActivityResult, overdueTasks, stageWeights, inactivityThresholds, inactivityPoints, overdueTaskPoints, labelThresholds] =
         await Promise.all([
             getDaysSinceActivity(deal, user),
-            getOverdueTaskCount(deal._id),
+            getOverdueTasks(deal._id),
             getWeightSetting(companyKey, 'stageRiskPoints', DEFAULT_STAGE_RISK_POINTS),
             getWeightSetting(companyKey, 'inactivityThresholds', DEFAULT_INACTIVITY_THRESHOLDS),
             getWeightSetting(companyKey, 'inactivityPoints', DEFAULT_INACTIVITY_POINTS),
@@ -88,9 +112,10 @@ const computeRiskScore = async (deal, companyKey, user) => {
         reasons.push(`No activity in ${daysSinceActivity} days — beyond the ${inactivityThresholds.warningAtDays}-day warning threshold`)
     }
 
-    if (overdueTaskCount > 0) {
-        points += overdueTaskPoints
-        reasons.push(`${overdueTaskCount} overdue task${overdueTaskCount > 1 ? 's' : ''} linked to this deal`)
+    const overdueResult = scoreOverdueTasks(overdueTasks, overdueTaskPoints)
+    if (overdueResult.points > 0) {
+        points += overdueResult.points
+        reasons.push(overdueResult.reason)
     }
 
     let riskLevel = 'Low'
@@ -103,7 +128,7 @@ const computeRiskScore = async (deal, companyKey, user) => {
         riskLevel,
         points,
         reasons,
-        factors: {daysInStage, daysSinceActivity, neverContacted, overdueTaskCount},
+        factors: {daysInStage, daysSinceActivity, neverContacted, overdueTaskCount: overdueTasks.length},
     }
 }
 
