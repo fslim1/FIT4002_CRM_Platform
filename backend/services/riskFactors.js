@@ -44,6 +44,8 @@ const getDaysSinceActivity = async (deal, user) => {
   return {days, neverContacted: false}
 }
 
+// H5: overdue task count only — kept for the /risk-factors endpoint, which
+// just reports raw signals, not scoring.
 const getOverdueTaskCount = async (dealId) => {
   return Task.countDocuments({
     deal: dealId,
@@ -52,4 +54,14 @@ const getOverdueTaskCount = async (dealId) => {
   })
 }
 
-module.exports = {getDaysInStage, getDaysSinceActivity, getOverdueTaskCount}
+// Full overdue task documents (priority + dueDate), used by computeRiskScore
+// to apply the client's severity ruleset rather than just a flat count.
+const getOverdueTasks = async (dealId) => {
+  return Task.find({
+    deal: dealId,
+    dueDate: {$lt: new Date()},
+    status: {$ne: 'completed'},
+  }).select('priority dueDate')
+}
+
+module.exports = {getDaysInStage, getDaysSinceActivity, getOverdueTaskCount, getOverdueTasks}
