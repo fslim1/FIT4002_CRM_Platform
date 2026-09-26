@@ -11,9 +11,8 @@ const {
 
 const SCORABLE_STAGES = ['Qualified', 'Contact Made', 'Demo Scheduled', 'Proposal Made', 'Negotiation']
 
-// Loads one weight-setting value for a company, falling back to the default
-// if the admin hasn't configured it yet — so scoring never breaks or stalls
-// waiting for configuration (same "no cold start" principle as H6's seeding).
+const MANUAL_DEAL_GRACE_PERIOD_MS = 3 * 24 * 60 * 60 * 1000
+
 const getWeightSetting = async (companyKey, key, fallback) => {
     const doc = await RiskWeightSetting.findOne({companyKey, key})
     return doc ? doc.value : fallback
@@ -21,9 +20,7 @@ const getWeightSetting = async (companyKey, key, fallback) => {
 
 // H7: combines H3/H4/H5's raw factors into one deterministic Low/Medium/High
 // score, using the company's own benchmarks (H6) and weights.
-const computeRiskScore = async (deal, companyKey, companyName) => {
-    // Closed deals aren't meaningfully "at risk" — the client's own tables
-    // only define behaviour for the five active stages.
+const computeRiskScore = async (deal, companyKey, user) => {
     if (!SCORABLE_STAGES.includes(deal.stage)) {
         return {
             riskLevel: 'Low',
@@ -33,9 +30,28 @@ const computeRiskScore = async (deal, companyKey, companyName) => {
         }
     }
 
+    const ageMs = Date.now() - new Date(deal.createdAt).getTime()
+    if (ageMs < MANUAL_DEAL_GRACE_PERIOD_MS) {
+        const [daysSinceActivityResult, overdueTaskCount] = await Promise.all([
+            getDaysSinceActivity(deal, user),
+            getOverdueTaskCount(deal._id),
+        ])
+        return {
+            riskLevel: 'Low',
+            points: 0,
+            reasons: ['Deal was created within the last 3 days — grace period applies'],
+            factors: {
+                daysInStage: getDaysInStage(deal),
+                daysSinceActivity: daysSinceActivityResult.days,
+                neverContacted: daysSinceActivityResult.neverContacted,
+                overdueTaskCount,
+            },
+        }
+    }
+
     const [daysSinceActivityResult, overdueTaskCount, stageWeights, inactivityThresholds, inactivityPoints, overdueTaskPoints, labelThresholds] =
         await Promise.all([
-            getDaysSinceActivity(deal, companyName),
+            getDaysSinceActivity(deal, user),
             getOverdueTaskCount(deal._id),
             getWeightSetting(companyKey, 'stageRiskPoints', DEFAULT_STAGE_RISK_POINTS),
             getWeightSetting(companyKey, 'inactivityThresholds', DEFAULT_INACTIVITY_THRESHOLDS),
@@ -50,7 +66,6 @@ const computeRiskScore = async (deal, companyKey, companyName) => {
     let points = 0
     const reasons = []
 
-    // --- Stage-duration factor, using H6's per-company benchmark ---
     const benchmark = await RiskBenchmark.findOne({companyKey, dealType: 'Standard', stage: deal.stage})
     if (benchmark) {
         if (daysInStage >= benchmark.highRiskMinDays) {
@@ -61,10 +76,7 @@ const computeRiskScore = async (deal, companyKey, companyName) => {
             reasons.push(`In "${deal.stage}" for ${daysInStage} days — beyond the ${benchmark.healthyMaxDays}-day healthy range`)
         }
     }
-    // If no benchmark is configured for this stage yet, it simply contributes
-    // no stage-duration points rather than failing the whole calculation.
 
-    // --- Inactivity factor ---
     if (neverContacted) {
         points += inactivityPoints.highRisk
         reasons.push('No interaction has ever been logged for this deal')
@@ -76,13 +88,11 @@ const computeRiskScore = async (deal, companyKey, companyName) => {
         reasons.push(`No activity in ${daysSinceActivity} days — beyond the ${inactivityThresholds.warningAtDays}-day warning threshold`)
     }
 
-    // --- Overdue task factor ---
     if (overdueTaskCount > 0) {
         points += overdueTaskPoints
         reasons.push(`${overdueTaskCount} overdue task${overdueTaskCount > 1 ? 's' : ''} linked to this deal`)
     }
 
-    // --- Map points to a label ---
     let riskLevel = 'Low'
     if (points >= labelThresholds.highMin) riskLevel = 'High'
     else if (points >= labelThresholds.mediumMin) riskLevel = 'Medium'
