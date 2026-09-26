@@ -1,12 +1,9 @@
 const Task = require('../models/Task')
 const Customer = require('../models/Customer')
+const { getVisibleCustomerFilter } = require('../middleware/teamScope')
 
 const escapeRegex = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 
-// H3: how many whole days the deal has been in its current stage.
-// Pure calculation, no DB call — mirrors the Deal model's `daysInStage`
-// virtual, exposed here too so the /risk-factors endpoint doesn't need to
-// re-fetch or duplicate the virtual's logic.
 const getDaysInStage = (deal) => {
   if (!deal.stageEnteredDate) return 0
   const ms = Date.now() - new Date(deal.stageEnteredDate).getTime()
@@ -14,18 +11,22 @@ const getDaysInStage = (deal) => {
 }
 
 // H4: days since the most recent logged interaction on the deal's customer.
-// Customer.interactions[].date is the real field (see models/Customer.js),
-// defaulting to Date.now on creation, so every interaction has one.
-const getDaysSinceActivity = async (deal, companyName) => {
+// Scoped via getVisibleCustomerFilter (same mechanism dealRoutes.js uses to
+// validate a customer on deal creation) rather than matching on
+// Customer.company — that field describes the customer's own employer, not
+// the requester's CRM tenant, and must never be used for scoping.
+const getDaysSinceActivity = async (deal, user) => {
   if (!deal.customer) return {days: null, neverContacted: true}
 
+  const customerScope = await getVisibleCustomerFilter(user)
   const customer = await Customer.findOne({
-    fullName: {$regex: `^${escapeRegex(deal.customer)}$`, $options: 'i'},
-    company: {$regex: `^${escapeRegex(companyName || '')}$`, $options: 'i'},
+    $and: [
+      { fullName: {$regex: `^${escapeRegex(deal.customer)}$`, $options: 'i'} },
+      customerScope,
+    ],
   }).select('interactions')
 
   if (!customer || !customer.interactions || customer.interactions.length === 0) {
-    // AC: no interaction ever logged -> treated as maximum risk, not an error.
     return {days: null, neverContacted: true}
   }
 
@@ -43,7 +44,6 @@ const getDaysSinceActivity = async (deal, companyName) => {
   return {days, neverContacted: false}
 }
 
-// H5: overdue tasks linked directly to this deal.
 const getOverdueTaskCount = async (dealId) => {
   return Task.countDocuments({
     deal: dealId,
